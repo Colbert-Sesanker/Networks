@@ -1,4 +1,4 @@
 **Main Functions:**
 
 * Regress_LassoO.m (O for octave) uses Lasso Lars.
-* AIC_Regress.m uses and information criterion to select amoung linear Regression models.
+* AIC_Regress.m uses an information criterion to select among a set of Linear Regression models.
