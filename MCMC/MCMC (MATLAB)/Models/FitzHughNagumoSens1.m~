@@ -1,0 +1,32 @@
+function dy = FitzHughNagumoSens2(t,y,p)
+
+% Initial conditions for FHN model are V = -1, R = 1
+
+% Set up species
+V  = y(1);
+R  = y(2);
+Va = y(3);
+Ra = y(4);
+Vb = y(5);
+Rb = y(6);
+Vc = y(7);
+Rc = y(8);
+
+% Set up parameters
+a = p(1);
+b = p(2);
+c = p(3);
+
+% Evaluate equations
+dy    = zeros(2,1);    % a column vector
+
+dy(1) = c*(V-(V^3)/3+R);
+dy(2) = -(V-a+b*R)/c;
+
+dy(3) = (c-c*V^2)*Va + c*Ra;
+dy(4) = (-1/c)*Va + (-b/c)*Ra + 1/c;
+dy(5) = (c-c*V^2)*Vb + c*Rb;
+dy(6) = (-1/c)*Vb + (-b/c)*Rb - R/c;
+dy(7) = (c-c*V^2)*Vc + c*Rc + V - (V^3)/3 + R;
+dy(8) = (-1/c)*Vc + (-b/c)*Rc + (V-a+b*R)/(c^2);
+end

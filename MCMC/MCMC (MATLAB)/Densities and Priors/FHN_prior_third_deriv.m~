@@ -1,0 +1,13 @@
+% This is a prior on a matrix of parameters
+function prior_prob_matrix = FHN_prior_third_deriv(numSampledParams,...
+                                                   sampled_params)
+
+
+ % third deriviative of gamma prior with respect to variable
+ prior_prob_matrix = diag( 4*ones(1, numSampledParams) ...
+                           ./ sampledParameters.^3     ...
+                         );
+
+end
+
+
