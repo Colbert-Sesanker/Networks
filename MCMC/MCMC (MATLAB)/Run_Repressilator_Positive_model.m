@@ -29,7 +29,7 @@ Model.addedNoise_SD                  = 0.5;
 Model.initialStepSize                = 0.6;
 % The step size is adjusted online until acceptance ratio
 % is in the range given by 'stepSizeRange'
-Model.stepSizeRange                  = [50 70];
+Model.stepSizeRange                  = [70 80];
 % epsilon is for finite differences
 Model.epsilon                        = 5e-1; 
 Model.zeroMetricTensorDerivatives    = true;
@@ -38,12 +38,11 @@ Model.plotProposedTrajectories       = true;
 
 % For RMHMC
 Model.numLeapFrogSteps               = 3;
-Model.stepSize_RMHMC                 = 3 / Model.numLeapFrogSteps;
+Model.stepSize_RMHMC                 = 2 / Model.numLeapFrogSteps;
 Model.maxFixedPointStepsMomentum     = 5;
 Model.maxFixedPointStepsPosition     = 3;
 
 % Choose sensitvity type
-Model.isAnalyticSens                 = false;
 sensitivityMethods                   = getSensitivityMethods();
 % 1 = symbolic, 2= finite diff, 3= automatic diff
 Model.sensitivityMethod              = sensitivityMethods{3};
@@ -131,9 +130,11 @@ Model.noisyData = speciesEstimates + ...
 % Call sampling routines %
 %%%%%%%%%%%%%%%%%%%%%%%%%
 
+MALA(Model);
+
 RMHMC(Model);
 
-MALA(Model);
+
 
 
 

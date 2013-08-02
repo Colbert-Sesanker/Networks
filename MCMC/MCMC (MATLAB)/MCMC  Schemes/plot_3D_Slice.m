@@ -1,6 +1,6 @@
 function plot_3D_Slice( paramTriples, ...
                         figureNums...
-                       )
+                      )
 
 for p = 1: length(paramTriples)           
         figure(figureNums(p));
@@ -12,8 +12,7 @@ for p = 1: length(paramTriples)
         drawnow;
         xlabel(num2str(p));
         %ylabel(num2str(y));
-        title(['3d slice params ' num2str(x)...
-                num2str(y) num2str(z)]);
+        title(['3d slice triple ' num2str(p)]);
 end
  
 end

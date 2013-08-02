@@ -11,8 +11,8 @@ for p = 1: length(paramPairs)
         drawnow;
         xlabel(num2str(p));
         %ylabel(num2str(y));
-        title(['2d slice params ' num2str(x)...
-               ' vs param'        num2str(y)]);
+        title(['2d slice pair ' num2str(p)...
+               '1 vs 2']);
 end
  
 end
