@@ -26,7 +26,7 @@ Model.sampledParam_idxs              = sampledParam_idxs;
 % Noise
 Model.addedNoise_SD                  = 0.5;
 % The initial step size for parameter updates
-Model.initialStepSize                = 0.6;
+Model.initialStepSize                = 0.1;
 % The step size is adjusted online until acceptance ratio
 % is in the range given by 'stepSizeRange'
 Model.stepSizeRange                  = [70 80];
@@ -35,12 +35,18 @@ Model.epsilon                        = 5e-1;
 Model.zeroMetricTensorDerivatives    = true;
 % If true plots trajectories for all proposed parameters
 Model.plotProposedTrajectories       = true;
+% Use basic MALA algorithm without manifold information
+Model.isMala                         = true;
+% Number of steps to recalculate metric tensor
+Model.tensorMonitorRate              = 1;
 
 % For RMHMC
 Model.numLeapFrogSteps               = 3;
 Model.stepSize_RMHMC                 = 2 / Model.numLeapFrogSteps;
 Model.maxFixedPointStepsMomentum     = 5;
 Model.maxFixedPointStepsPosition     = 3;
+% Use basic HMC without manifold information
+Model.isHMC                          = false;
 
 % Choose sensitvity type
 sensitivityMethods                   = getSensitivityMethods();
