@@ -25,7 +25,7 @@ observedStates                     = Model.observedStates;
 unobservedStates                   = Model.unobservedStates;
 totalStates                        = length(observedStates) + ...
                                      length(unobservedStates);
-addedNoise_SD                       = Model.addedNoise_SD;
+addedNoise_SD                      = Model.addedNoise_SD;
 equations                          = Model.equations;
 equations_AD                       = Model.equations_AD;
 sensitivityMethod                  = Model.sensitivityMethod;

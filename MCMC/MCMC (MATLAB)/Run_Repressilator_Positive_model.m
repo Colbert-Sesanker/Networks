@@ -38,7 +38,7 @@ Model.plotProposedTrajectories       = true;
 % Use basic MALA algorithm without manifold information
 Model.isMala                         = true;
 % Number of steps to recalculate metric tensor
-Model.tensorMonitorRate              = 1;
+Model.tensorMonitorRate              = 30;
 
 % For RMHMC
 Model.numLeapFrogSteps               = 3;
@@ -136,9 +136,11 @@ Model.noisyData = speciesEstimates + ...
 % Call sampling routines %
 %%%%%%%%%%%%%%%%%%%%%%%%%
 
-MALA(Model);
 
 RMHMC(Model);
+MALA(Model);
+
+
 
 
 

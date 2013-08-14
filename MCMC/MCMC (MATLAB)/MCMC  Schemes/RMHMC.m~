@@ -392,8 +392,6 @@ while continueIterations
             
             proposedMomentumFrac = currentProposedMomentum + ...
                   (stepSize / 2) * (currentGrad_LL' - 0.5*currentTraceInvGdG' + quadraticTerm' );
-            
-            currentInvGMomentum = currentInvG * proposedMomentumFrac;
              
             newSampledParams = currentSampledParams + (stepSize / 2) * currentInvGMomentum' + ...
                                                       (stepSize / 2) * invGMomentum' ;
