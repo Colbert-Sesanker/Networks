@@ -160,6 +160,8 @@ elseif calculateTensor
 
     identity           = eye(numSampledParams);                                     
     currentInvG        = identity / (currentG + identity*1e-6);
+    G                  = currentG;
+    invG               = currentInvG; 
 
     if zeroMetricTensorDerivatives
 
@@ -183,10 +185,10 @@ elseif calculateTensor
       [currentInvGdG,...
        currentTraceInvGdG]  = calcInvGdG_terms(currentInvG, deriv_G,...
                                                numSampledParams); 
-      invGdG      = currentInvGdG;      
-      traceInvGdG = currentInvGdG;
-
-    end % if   
+    end % if  
+    
+    invGdG      = currentInvGdG;      
+    traceInvGdG = currentTraceInvGdG;
 
 end % if
 
@@ -395,13 +397,14 @@ while continueIterations
             
             currentInvGMomentum = currentInvG * proposedMomentumFrac;
              
-            newSampledParams = currentSampledParams + (stepSize / 2) * currentInvGMomentum' + ...
-                                                      (stepSize / 2) * invGMomentum' ;
-
+            newSampledParams = currentSampledParams + stepSize * currentInvGMomentum' ;     
+            
+            newParams        = updateTotalParameters( totalParams,...
+                                                      newSampledParams,...
+                                                      sampledParam_idxs); 
             
              
-        end % if that decides between hmc / rmhmc
-        
+        end % if that decides between hmc / rmhmc 
                              
         
         % plot trajectories as proposed 
