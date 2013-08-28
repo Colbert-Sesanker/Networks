@@ -27,6 +27,8 @@ Model.sampledParam_idxs              = sampledParam_idxs;
 Model.addedNoise_SD                  = 0.5;
 % The initial step size for parameter updates
 Model.initialStepSize                = 0.1;
+% Step Size for standard Metropolis Hastings
+Model.mhSetepSize                    = 0.05;
 % The step size is adjusted online until acceptance ratio
 % is in the range given by 'stepSizeRange'
 Model.stepSizeRange                  = [70 80];
@@ -36,11 +38,13 @@ Model.zeroMetricTensorDerivatives    = true;
 % If true plots trajectories for all proposed parameters
 Model.plotProposedTrajectories       = true;
 % Use basic MALA algorithm without manifold information
-Model.isMala                         = true;
+Model.isMala                         = false;
 % Number of steps to recalculate metric tensor
 Model.tensorMonitorRate              = 30;
 % Preconditioning matrix that don't use 
-Model.preConditionMatrix             = eye(Model.numSampledParams);
+Model.preConditionMatrix             = [4.0493   -5.3057   -0.8575
+                                       -5.3057    8.3806    1.5185
+                                       -0.8575    1.5185    0.2977];
 
 % For RMHMC
 Model.numLeapFrogSteps               = 3;
@@ -130,17 +134,19 @@ Model.speciesEstimates  = speciesEstimates;
 
 % Add Noise to trajectories
 addedNoise_SD    = Model.addedNoise_SD;
-Model.noisyData = speciesEstimates + ...
-                  randn(numStates, numTimePts) .* addedNoise_SD;
+Model.noisyData  = speciesEstimates + ...
+                   randn(numStates, numTimePts) .* addedNoise_SD;
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%        
 % Call sampling routines %
 %%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-RMHMC(Model);
+MH_oneParamAt_a_Time(Model);
+MH(Model);
 MALA(Model);
+RMHMC(Model);
+
 
 
 

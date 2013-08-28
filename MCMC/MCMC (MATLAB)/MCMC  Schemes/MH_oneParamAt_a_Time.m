@@ -1,4 +1,7 @@
-function  MH(Model)
+% Metropolis Hastings Algorithm that makes proposals by moving each
+% parameter on at a time, instead of using a multidimensional Gaussian
+
+function  MH_oneParamAt_a_Time(Model)
 
 % Start the timer for burn-in samples
 tic
@@ -132,6 +135,10 @@ converged           = false;
 continueIterations  = true;
 % Initialize iteration number
 iterationNum        = 0;
+% Count for moving parameters one at a time
+paramCount          = 0;
+% Initialize sampled parameters
+newSampledParams    = zeros(1, numSampledParams);
                       
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %              MALA Algorithm to sample the parameters:                   %
@@ -140,9 +147,7 @@ iterationNum        = 0;
 
 while continueIterations    
     
-    iterationNum = iterationNum + 1;     
-    
-    attempted    = attempted    + 1; 
+    iterationNum = iterationNum + 1;    
     
     disp(['Iteration:  '...
           num2str(iterationNum)]);
@@ -151,80 +156,85 @@ while continueIterations
     % Update parameters       %
     %%%%%%%%%%%%%%%%%%%%%%%%%%%  
     
+    for p = 1: numSampledParams
     
-    newSampledParams  = currentSampledParams + stepSize * randn(1, numSampledParams) * M; 
+        attempted    = attempted    + 1;
+
+        newSampledParams(p)  = currentSampledParams(p) + stepSize * randn; 
+
+        newParams            = updateTotalParameters( totalParams,...
+                                                      newSampledParams,...
+                                                      sampledParam_idxs);     
+ 
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%
+        % Integrate Equations     %
+        %%%%%%%%%%%%%%%%%%%%%%%%%%%    
+
+         [ ~ , trajectories] = ...
+                                       ...
+                      ode45(...
+                             equations,... 
+                             timePoints,... 
+                             initialValues,...   
+                             odeset('RelTol', 1e-6),...                   
+                             newParams...
+                           );       
+
+
+        % Ocassionally  trajectories may get imaginary artifacts                   
+        if any(imag(trajectories(:)))
+            error('Trajectory has imaginary components');
+        end % if
+
+        speciesEstimates  = extractSpeciesTrajectories(trajectories,...
+                                                       numStates);                                  
+
+        % plot trajectories as proposed 
+        if  plotProposedTrajectories
+            for i = 1:numStates
+                figure(i);
+                hold on;
+                plot(speciesEstimates(i, :));
+            end % for
+        end % if        
+
+        proposed_LL      = calculate_LL( speciesEstimates, Y,... 
+                                         currentNoise,     observedStates...
+                                       );
+
+        % Calculate the log prior for proposed parameter value   
+        proposedLogPrior = zeros(1, numSampledParams);
+        for p = 1: numSampledParams    
+            proposedLogPrior(p) = prior(sampledParam_idxs(p),...
+                                        newSampledParams(p));        
+        end
+        proposedLogPrior = sum(proposedLogPrior);                                                                 
+
+
+        % Calculate the log prior for current hyperparameter value
+        currentLogPrior = zeros(1, numSampledParams);
+        for p = 1: numSampledParams    
+            currentLogPrior(p) = prior(sampledParam_idxs(p),...
+                                       currentSampledParams(p));        
+        end
+        currentLogPrior = sum(currentLogPrior);  
+
+       % Accept according to ratio of log probabilities
+        ratio =... 
+               proposed_LL  +  proposedLogPrior  - current_LL   -  currentLogPrior;              
+
+        if ratio > 0 || log(rand) < min(0, ratio)
+            % Accept proposal
+            % Update variables        
+            accepted                   = accepted + 1;
+
+            currentParams              = newParams;
+            currentSampledParams       = newSampledParams;
+            current_LL                 = proposed_LL;      
+            currentSpeciesEstimates    = speciesEstimates;                   
+        end
     
-    newParams         = updateTotalParameters( totalParams,...
-                                               newSampledParams,...
-                                               sampledParam_idxs);     
-    
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Integrate Equations     %
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%    
-             
-     [ ~ , trajectories] = ...
-                                   ...
-                  ode45(...
-                         equations,... 
-                         timePoints,... 
-                         initialValues,...   
-                         odeset('RelTol', 1e-6),...                   
-                         newParams...
-                       );       
-   
-    
-    % Ocassionally  trajectories may get imaginary artifacts                   
-    if any(imag(trajectories(:)))
-        error('Trajectory has imaginary components');
-    end % if
-        
-    speciesEstimates  = extractSpeciesTrajectories(trajectories,...
-                                                   numStates);                                  
-         
-    % plot trajectories as proposed 
-    if  plotProposedTrajectories
-        for i = 1:numStates
-            figure(i);
-            hold on;
-            plot(speciesEstimates(i, :));
-        end % for
-    end % if        
-                        
-    proposed_LL      = calculate_LL( speciesEstimates, Y,... 
-                                     currentNoise,     observedStates...
-                                   );
-    
-    % Calculate the log prior for proposed parameter value   
-    proposedLogPrior = zeros(1, numSampledParams);
-    for p = 1: numSampledParams    
-        proposedLogPrior(p) = prior(sampledParam_idxs(p),...
-                                    newSampledParams(p));        
-    end
-    proposedLogPrior = sum(proposedLogPrior);                                                                 
-                          
-    
-    % Calculate the log prior for current hyperparameter value
-    currentLogPrior = zeros(1, numSampledParams);
-    for p = 1: numSampledParams    
-        currentLogPrior(p) = prior(sampledParam_idxs(p),...
-                                   currentSampledParams(p));        
-    end
-    currentLogPrior = sum(currentLogPrior);  
-        
-   % Accept according to ratio of log probabilities
-    ratio =... 
-           proposed_LL  +  proposedLogPrior  - current_LL   -  currentLogPrior;              
-        
-    if ratio > 0 || log(rand) < min(0, ratio)
-        % Accept proposal
-        % Update variables        
-        accepted                   = accepted + 1;
-        
-        currentParams              = newParams;
-        currentSampledParams       = newSampledParams;
-        current_LL                 = proposed_LL;      
-        currentSpeciesEstimates    = speciesEstimates;                   
-    end
+    end % for loop over each param
     
     % Keep track of acceptance ratios at each iteration number
     acceptanceRatio                = 100*accepted / attempted;

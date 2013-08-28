@@ -1,4 +1,4 @@
-function  MH(Model)
+function  MH_oneParamAt_a_Time(Model)
 
 % Start the timer for burn-in samples
 tic
@@ -132,6 +132,8 @@ converged           = false;
 continueIterations  = true;
 % Initialize iteration number
 iterationNum        = 0;
+% Count for moving parameters one at a time
+paramCount          = 0;
                       
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %              MALA Algorithm to sample the parameters:                   %
@@ -142,7 +144,8 @@ while continueIterations
     
     iterationNum = iterationNum + 1;     
     
-    attempted    = attempted    + 1; 
+    attempted    = attempted    + 1;    
+    
     
     disp(['Iteration:  '...
           num2str(iterationNum)]);
@@ -151,8 +154,11 @@ while continueIterations
     % Update parameters       %
     %%%%%%%%%%%%%%%%%%%%%%%%%%%  
     
+    for p = 1: numSampledParams
     
-    newSampledParams  = currentSampledParams + stepSize * randn(1, numSampledParams) * M; 
+    attempted    = attempted    + 1;
+    
+    newSampledParams(p)  = currentSampledParams(p) + stepSize * randn; 
     
     newParams         = updateTotalParameters( totalParams,...
                                                newSampledParams,...

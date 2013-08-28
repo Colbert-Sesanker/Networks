@@ -27,6 +27,8 @@ Model.sampledParam_idxs              = sampledParam_idxs;
 Model.addedNoise_SD                  = 0.5;
 % The initial step size for parameter updates
 Model.initialStepSize                = 0.1;
+% Step Size for standard Metropolis Hastings
+Model.mhSetepSize                    =.01;
 % The step size is adjusted online until acceptance ratio
 % is in the range given by 'stepSizeRange'
 Model.stepSizeRange                  = [70 80];
@@ -130,15 +132,15 @@ Model.speciesEstimates  = speciesEstimates;
 
 % Add Noise to trajectories
 addedNoise_SD    = Model.addedNoise_SD;
-Model.noisyData = speciesEstimates + ...
-                  randn(numStates, numTimePts) .* addedNoise_SD;
+Model.noisyData  = speciesEstimates + ...
+                   randn(numStates, numTimePts) .* addedNoise_SD;
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%        
 % Call sampling routines %
 %%%%%%%%%%%%%%%%%%%%%%%%%
 
-
+MH(Model);
 RMHMC(Model);
 MALA(Model);
 
