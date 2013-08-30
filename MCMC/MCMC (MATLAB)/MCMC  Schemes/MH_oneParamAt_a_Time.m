@@ -1,5 +1,5 @@
 % Metropolis Hastings Algorithm that makes proposals by moving each
-% parameter on at a time, instead of using a multidimensional Gaussian
+% parameter one at a time, instead of using a multidimensional Gaussian
 
 function  MH_oneParamAt_a_Time(Model)
 
@@ -32,11 +32,11 @@ addedNoise_SD                      = Model.addedNoise_SD;
 equations                          = Model.equations;
 initialValues                      = Model.initialValues;
 
-stepSize                           = Model.mhSetepSize;  
+stepSize                           = Model.mhStepSize;  
 stepSizeRange                      = Model.stepSizeRange; 
 
 burnin                             = Model.burnin;
-numPosteriorSamples                = Model.numPosteriorSamples;
+numPosteriorSamples                = Model.numPosteriorSamples; 
 equationName                       = Model.equationName;
 totalParams                        = Model.totalParams;
 timePoints                         = Model.timeData;
@@ -90,9 +90,7 @@ end
                          initialValues,...   
                          odeset('RelTol', 1e-6),...                   
                          totalParams...
-                       );  
-                   
-   
+                       );    
     
 % Ocassionally  trajectories may get imaginary artifacts                   
 if any(imag(trajectories(:)))

@@ -28,7 +28,7 @@ Model.addedNoise_SD                  = 0.5;
 % The initial step size for parameter updates
 Model.initialStepSize                = 0.1;
 % Step Size for standard Metropolis Hastings
-Model.mhSetepSize                    = 0.05;
+Model.mhStepSize                     = 0.1;
 % The step size is adjusted online until acceptance ratio
 % is in the range given by 'stepSizeRange'
 Model.stepSizeRange                  = [70 80];

@@ -126,7 +126,7 @@ end
                           equationsSens,... 
                           initialValues,       initialValuesSens,          ...
                           timePoints,          numStates,                  ...  
-                          numSampledParams,    totalParams,            ...
+                          numSampledParams,    totalParams,                ...
                           sampledParam_idxs,   epsilon                     ...                                 
                         );
 
@@ -186,7 +186,7 @@ elseif calculateTensor
 
     end % if   
     
-    secondTerm  = zeros(1, numSampledParams); % this is hack
+    secondTerm  = zeros(1, numSampledParams); % this is a hack
     thirdTerm   = zeros(1, numSampledParams);
 
 end % if
@@ -286,8 +286,7 @@ while continueIterations
          
         
     speciesEstimates  = extractSpeciesTrajectories(trajectories,...
-                                                   numStates);
-                                   
+                                                   numStates);                                   
          
     % plot trajectories as proposed 
     if  plotProposedTrajectories
