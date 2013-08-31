@@ -266,7 +266,10 @@ while continueIterations
         end % if
 
         speciesEstimates  = extractSpeciesTrajectories(trajectories,...
-                                                       numStates);     
+                                                       numStates);  
+        probNewGivenOld   = 0;
+        probOldGivenNew   = 0;
+        
     end % if       
                                                
          
@@ -304,7 +307,8 @@ while continueIterations
         
    % Accept according to ratio of log probabilities
     ratio =... 
-           proposed_LL  +  proposedLogPrior  - current_LL   -  currentLogPrior;              
+           proposed_LL  +  proposedLogPrior +  probOldGivenNew ...
+         - current_LL   -  currentLogPrior  -  probNewGivenOld;              
         
     if ratio > 0 || log(rand) < min(0, ratio)
         % Accept proposal
