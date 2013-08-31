@@ -41,20 +41,19 @@ timePoints                         = Model.timeData;
 plotProposedTrajectories           = Model.plotProposedTrajectories;
 
 sampledParam_idxs                  = Model.sampledParam_idxs;
-                                     
+sampledParams                      = totalParams(sampledParam_idxs);                                          
 M                                  = Model.preConditionMatrix;
+
 
 
 % Model specific priors:
 % Prior struct of priors and derivatives
 % Objective priors throw exceptions when parameters reach
 % regions of zero probability
-Prior                   = Model.Prior;
-
+Prior                   = Model.Prior;     
 % Used in calculating prior probabilities of current and proposed parameters
 prior                   = Prior.prior;
-                          
-sampledParams           = totalParams(sampledParam_idxs);
+
 
 
 % Set up noise for likelihood function
@@ -70,16 +69,13 @@ if isscalar(addedNoise_SD)
     currentNoise = ones(1, numStates) * addedNoise_SD^2;
 end
 
-% Default step size is: 1 /  (number of covariates) ^ (- 1/3)
-if strcmp(stepSize, 'default')
-    stepSize = numSampledParams^(- 1/3);
-end  
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Calculate metric tensor and maximum likelihood values of parameters     %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 
+% initialize parameters to throw away values to use getSensAndTrajectories 
+% function
 zeroMetricTensorDerivatives = true;
 sensitivityMethod           = 'automatic differentiation';
 equationsSens               = {};
@@ -95,7 +91,7 @@ epsilon                     = NaN;
                                     ...
                         ( sensitivityMethod,   zeroMetricTensorDerivatives,...
                           equations,           equations_AD,               ...  
-                          equationsSens,... 
+                          equationsSens,                                   ... 
                           initialValues,       initialValuesSens,          ...
                           timePoints,          numStates,                  ...  
                           numSampledParams,    totalParams,                ...
@@ -115,6 +111,9 @@ identity           = eye(numSampledParams);
 % In addition to bounding singular values
 % add diagonal dust to improve rank                                      
 currentInvG        = identity / (currentG + identity*1e-6);
+
+M                  = chol(currentInvG);
+M_invCurrent       = currentG;
                                            
 current_LL   = calculate_LL( speciesEstimates, Y,... 
                              currentNoise,     observedStates...
@@ -159,25 +158,23 @@ while continueIterations
     
     invG = currentInvG;
     
-    iterationNum = iterationNum + 1;   
+    iterationNum    = iterationNum + 1;      
+ 
+    calculateTensor = mod(iterationNum, ...
+                          Model.tensorMonitorRate) == 0; 
     
-    calculateTensor = mod(iterationNum, Model.tensorMonitorRate ) == 0; 
-    
-    attempted    = attempted    + 1; 
+    attempted       = attempted    + 1; 
     
     disp(['Iteration:  '...
           num2str(iterationNum)]);
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Update parameters       %
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%  
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%      
     
-    if calculateTensor 
-        M = invG;
-    end
-    
-    
-    newSampledParams  = currentSampledParams + stepSize * randn(1, numSampledParams) * M; 
+    newSampledParams  = currentSampledParams + ...
+                                               ...
+                        stepSize * randn(1, numSampledParams) * M; 
     
     newParams         = updateTotalParameters( totalParams,...
                                                newSampledParams,...
@@ -186,25 +183,92 @@ while continueIterations
     %%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Integrate Equations     %
     %%%%%%%%%%%%%%%%%%%%%%%%%%%    
-             
-    [trajectories,      ...
-     sensitivities_1,   ...
-           ~        ] = ...
-                             ...
-              getSensAndTrajectories...
-                                    ...
-                        ( sensitivityMethod,      zeroMetricTensorDerivatives,...
-                          equations,              equations_AD,...  
-                          equationsSens,... 
-                          initialValues,          initialValuesSens,         ...
-                          timePoints,             numStates,                 ...  
-                          numSampledParams,       newParams,                 ...
-                          sampledParam_idxs,      epsilon                    ...                                 
-                        );         
-         
+    
+    if calculateTensor          
         
-    speciesEstimates  = extractSpeciesTrajectories(trajectories,...
-                                                   numStates);                                                         
+        [trajectories,      ...
+         sensitivities_1,   ...
+               ~        ] = ...
+                                 ...
+                  getSensAndTrajectories...
+                                        ...
+                            ( sensitivityMethod,      zeroMetricTensorDerivatives,...
+                              equations,              equations_AD,               ...  
+                              equationsSens,                                      ... 
+                              initialValues,          initialValuesSens,          ...
+                              timePoints,             numStates,                  ...  
+                              numSampledParams,       newParams,                  ...
+                              sampledParam_idxs,      epsilon                     ...                                 
+                            );         
+             
+            
+        speciesEstimates  = extractSpeciesTrajectories(trajectories,...
+                                                       numStates);       
+        
+        G           = metricTensor(...
+                                    newSampledParams,   sensitivities_1,... 
+                                    numSampledParams,   observedStates,... 
+                                    currentNoise,       priorSecondDerivative...                              
+                                  );
+
+        identity    = eye(numSampledParams); 
+        % In addition to bounding singular values
+        % add diagonal dust to improve rank                                       
+        invG        =  identity / (G + identity*1e-6);
+        
+        % Keep track of old and new sampling matricies for acceptance ratio         
+        % in proposal distribution
+        M_invCurrent  = M_invProposed;
+        M_invProposed = G;
+        
+        M_current     =  M;        
+        M_proposed    =  chol(invG);
+        M             =  M_proposed;
+        
+        
+        currentSampledParams  = newSampledParams;
+        
+        newSampledParams      = currentSampledParams + ...
+                                                       ...
+                                stepSize * randn(1, numSampledParams) * M; 
+    
+        newParams             = updateTotalParameters( totalParams,...
+                                                       newSampledParams,...
+                                                       sampledParam_idxs);  
+                                                       
+        paramDiff             = (newSampledParams - currentSampledParams);
+        
+        probNewGivenOld       =  log(prod(diag(chol(M_current * stepSize^2)))) - ...                         
+                                 0.5* paramDiff * (M_invCurrent / stepSize^2) * paramDiff'... 
+                                 -   (numSampledParams / 2)*log(2*pi); 
+        
+        probOldGivenNew       =  log(prod(diag(chol(M_proposed * stepSize^2)))) - ...                         
+                                 0.5* paramDiff * (M_invProposed / stepSize^2) * paramDiff'... 
+                                 -   (numSampledParams / 2)*log(2*pi);
+                                                       
+        
+    else 
+    
+         [ ~ , trajectories] = ...
+                                       ...
+                      ode45(...
+                             equations,... 
+                             timePoints,... 
+                             initialValues,...   
+                             odeset('RelTol', 1e-6),...                   
+                             newParams...
+                           );       
+
+
+        % Ocassionally  trajectories may get imaginary artifacts                   
+        if any(imag(trajectories(:)))
+            error('Trajectory has imaginary components');
+        end % if
+
+        speciesEstimates  = extractSpeciesTrajectories(trajectories,...
+                                                       numStates);     
+    end % if       
+                                               
          
     % plot trajectories as proposed 
     if  plotProposedTrajectories
@@ -213,24 +277,13 @@ while continueIterations
             hold on;
             plot(speciesEstimates(i, :));
         end % for
-    end % if    
+    end % if        
     
-    if calculateTensor
-    
-    G           = metricTensor(...
-                               newSampledParams,   sensitivities_1,... 
-                               numSampledParams,   observedStates,... 
-                               currentNoise,       priorSecondDerivative...                              
-                              );
-
-    identity    = eye(numSampledParams); 
-    % In addition to bounding singular values
-    % add diagonal dust to improve rank                                       
-    invG        =  identity / (G + identity*1e-6);
-                        
+                            
     proposed_LL      = calculate_LL( speciesEstimates, Y,... 
                                      currentNoise,     observedStates...
                                    );
+                                   
     
     % Calculate the log prior for proposed parameter value   
     proposedLogPrior = zeros(1, numSampledParams);
