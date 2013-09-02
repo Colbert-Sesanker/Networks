@@ -30,7 +30,7 @@ equations                          = Model.equations;
 equations_AD                       = Model.equations_AD;
 initialValues                      = Model.initialValues;
 
-stepSize                           = Model.mhSetepSize;  
+stepSize                           = Model.mhStepSize;  
 stepSizeRange                      = Model.stepSizeRange; 
 
 burnin                             = Model.burnin;
@@ -53,6 +53,8 @@ M                                  = Model.preConditionMatrix;
 Prior                   = Model.Prior;     
 % Used in calculating prior probabilities of current and proposed parameters
 prior                   = Prior.prior;
+% Used in computing the metric tensor of posterior
+priorSecondDerivative   = Prior.priorSecondDerivative;
 
 
 
@@ -112,8 +114,8 @@ identity           = eye(numSampledParams);
 % add diagonal dust to improve rank                                      
 currentInvG        = identity / (currentG + identity*1e-6);
 
-M                  = chol(currentInvG);
-M_invCurrent       = currentG;
+M                  = currentInvG;
+M_invProposed      = currentG;
                                            
 current_LL   = calculate_LL( speciesEstimates, Y,... 
                              currentNoise,     observedStates...
@@ -154,9 +156,7 @@ iterationNum        = 0;
 %          All proposed parameters lack a 'Current' prefix                %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-while continueIterations  
-    
-    invG = currentInvG;
+while continueIterations    
     
     iterationNum    = iterationNum + 1;      
  
@@ -174,7 +174,7 @@ while continueIterations
     
     newSampledParams  = currentSampledParams + ...
                                                ...
-                        stepSize * randn(1, numSampledParams) * M; 
+                        stepSize * randn(1, numSampledParams) * chol(M); 
     
     newParams         = updateTotalParameters( totalParams,...
                                                newSampledParams,...
@@ -218,11 +218,11 @@ while continueIterations
         
         % Keep track of old and new sampling matricies for acceptance ratio         
         % in proposal distribution
-        M_invCurrent  = M_invProposed;
+        M_invCurrent  = M_invProposed; % previous G
         M_invProposed = G;
         
         M_current     =  M;        
-        M_proposed    =  chol(invG);
+        M_proposed    =  invG;
         M             =  M_proposed;
         
         
@@ -230,7 +230,7 @@ while continueIterations
         
         newSampledParams      = currentSampledParams + ...
                                                        ...
-                                stepSize * randn(1, numSampledParams) * M; 
+                                stepSize * randn(1, numSampledParams) * chol(M); 
     
         newParams             = updateTotalParameters( totalParams,...
                                                        newSampledParams,...
@@ -285,8 +285,7 @@ while continueIterations
                             
     proposed_LL      = calculate_LL( speciesEstimates, Y,... 
                                      currentNoise,     observedStates...
-                                   );
-                                   
+                                   );                                   
     
     % Calculate the log prior for proposed parameter value   
     proposedLogPrior = zeros(1, numSampledParams);
