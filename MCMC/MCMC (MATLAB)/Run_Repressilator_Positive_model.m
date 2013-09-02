@@ -39,12 +39,13 @@ Model.zeroMetricTensorDerivatives    = true;
 Model.plotProposedTrajectories       = true;
 % Use basic MALA algorithm without manifold information
 Model.isMala                         = false;
-% Number of steps to recalculate metric tensor
-Model.tensorMonitorRate              = 1;
+% Number of steps to recalculate metric tensor (can set to 'randomWalk')
+Model.tensorMonitorRate              = 'randomWalk';
 % Preconditioning matrix that don't use 
-Model.preConditionMatrix             = [4.0493   -5.3057   -0.8575
-                                       -5.3057    8.3806    1.5185
-                                       -0.8575    1.5185    0.2977];
+Model.preConditionMatrix             = eye(Model.numSampledParams);
+                                       %[4.0493   -5.3057   -0.8575
+                                       %-5.3057    8.3806    1.5185
+                                       %-0.8575    1.5185    0.2977];
 
 % For RMHMC
 Model.numLeapFrogSteps               = 3;
