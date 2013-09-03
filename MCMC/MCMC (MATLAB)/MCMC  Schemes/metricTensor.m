@@ -1,4 +1,4 @@
-% calculates metric tensor as: 
+ % calculates metric tensor as: 
 % G(i,j) = sum_{species}(sens_i(species) * cov_mat * sens_j(species))
 
 function G  = metricTensor(...

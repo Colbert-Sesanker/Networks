@@ -28,7 +28,7 @@ Model.addedNoise_SD                  = 0.5;
 % The initial step size for parameter updates
 Model.initialStepSize                = 0.1;
 % Step Size for standard Metropolis Hastings
-Model.mhStepSize                     = 0.7;
+Model.mhStepSize                     = 0.1;
 % The step size is adjusted online until acceptance ratio
 % is in the range given by 'stepSizeRange'
 Model.stepSizeRange                  = [70 80];
@@ -43,9 +43,9 @@ Model.isMala                         = false;
 Model.tensorMonitorRate              = 'randomWalk';
 % Preconditioning matrix that don't use 
 Model.preConditionMatrix             = eye(Model.numSampledParams);
-                                       %[4.0493   -5.3057   -0.8575
-                                       %-5.3057    8.3806    1.5185
-                                       %-0.8575    1.5185    0.2977];
+%                                        inv(1e4*[4.0493   -5.3057   -0.8575
+%                                        -5.3057    8.3806    1.5185
+%                                        -0.8575    1.5185    0.2977]);
 
 % For RMHMC
 Model.numLeapFrogSteps               = 3;
@@ -148,6 +148,8 @@ MH(Model);
 MH_oneParamAt_a_Time(Model);
 MALA(Model);
 RMHMC(Model);
+
+ensembleAnalysis(Model)
 
 
 

@@ -5,6 +5,9 @@
 % returns a vector that holds the effective sample size for
 % each parameter
 % Time normalizes result if isTimeNormalized is true
+% The basic idea is to fix-up the autocorrelation so 
+% it monotonically decreases, then sum up the components
+% until the first component that hits zero
 
 function [minESS, meanESS,...
           maxESS, totalESS]  = calculateESS(ensemble)
@@ -18,8 +21,9 @@ posteriorTime     = ensemble.posteriorTime;
 [numSamples, numParams] = size(ensemble);
 
 % autocorrelation of each parameter
+auto_corrs = zeros(numSamples, numParams);
 for i = 1: numParams
-    auto_corrs(:, i) =  xcov(ensemble(:, i), maxLag); 
+    auto_corrs(:, i) =  autocorr(ensemble(:, i), maxLag); 
 end
 
 half_autoCorr_length = floor(size(auto_corrs, 1) / 2);
