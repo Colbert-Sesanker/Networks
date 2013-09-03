@@ -84,8 +84,10 @@ equationsSens               = {};
 initialValuesSens           = [];
 epsilon                     = NaN; 
 
-if Model.tensorMonitorRate == 'randomWalk'
-    
+if strcmp(Model.tensorMonitorRate,...
+         'randomWalk')
+         
+    % set monitor rate greater than total number of samples
     tensorMonitorRate = burnin + numPosteriorSamples + 1;
     M                 = Model.preConditionMatrix;
     

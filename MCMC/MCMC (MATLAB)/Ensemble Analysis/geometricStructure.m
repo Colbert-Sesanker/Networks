@@ -1,0 +1,3 @@
+function geometricStructure()
+
+end

@@ -1,0 +1,18 @@
+
+function plotRunningMeans(ensemble)
+param_idxs       = ensemble.runningMeans.params; 
+
+runMean = @(vec) cumsum(vec) ./ (1 : length(vec));
+
+for param_idx     = param_idxs;
+    paramName     = ensemble.paramMap{param_idx}; 
+    param_samples = ensemble.samples(:, param_idx);    
+    rm            = runMean(param_samples);
+    figure();
+    plot(rm); 
+    xlabel('posterior sample number'); 
+    ylabel('mean');
+    title(['Running Mean: ' paramName]);
+end 
+
+end 

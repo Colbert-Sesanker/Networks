@@ -72,11 +72,6 @@ if isscalar(addedNoise_SD)
     currentNoise = ones(1, numStates) * addedNoise_SD^2;
 end
 
-% Default step size is: 1 /  (number of covariates) ^ (- 1/3)
-if strcmp(stepSize, 'default')
-    stepSize = numSampledParams^(- 1/3);
-end  
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Calculate  maximum likelihood values of parameters                      %
@@ -158,7 +153,7 @@ while continueIterations
     
         attempted    = attempted    + 1;
 
-        newSampledParams(p)  = currentSampledParams(p) + stepSize * randn; 
+        newSampledParams(p)  = currentSampledParams(p) + stepSize * randn * chol(M); 
 
         newParams            = updateTotalParameters( totalParams,...
                                                       newSampledParams,...
@@ -338,7 +333,7 @@ end % while
 posteriorTime = toc;
 
 % Save posterior
-fileName = [ 'MH'...
+fileName = [ 'MH_oneParamAt_a_Time'...
              '_'... 
              equationName...              
            ];
