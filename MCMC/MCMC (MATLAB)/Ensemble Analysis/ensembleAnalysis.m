@@ -6,10 +6,10 @@ function ensembleAnalysis(Model, ensembleData)
 
 addpath(genpath('./'));
 
-ensemble.autoCorr.maxLags      = []
+ensemble.autoCorr.maxLags      = [];
 ensemble.ESS.isTimeNormalized  = true;
 ensemble.posteriorTime         = ensembleData.posteriorTime;
-ensemble.autoCorr.params       = Model.sampledParam_idxs(:) 
+ensemble.autoCorr.params       = Model.sampledParam_idxs(:) ;
 ensemble.paramMap              = Model.paramMap;
 ensemble.samples               = ensembleData.paramHistory;
 % 95%, 50% and 5% confidence intervals
@@ -18,7 +18,7 @@ ensemble.trajQuantiles         = Model.trajQuantiles;
 ensemble.trajectories          = ensembleData.trajectoryHistory;
 ensemble.stateMap              = Model.stateMap;
 ensemble.paramQuantiles.params = Model.paramQuantiles.params;
-ensemble.posteriorParamsToPlot = Model.posteriorParamsToPlot
+ensemble.posteriorParamsToPlot = Model.posteriorParamsToPlot;
 
 ensemble.trajectoryQuantiles.statesToPlot = Model.trajectoryQuantiles.statesToPlot;
 
@@ -29,10 +29,10 @@ ensemble.trajectoryQuantiles.statesToPlot = Model.trajectoryQuantiles.statesToPl
  maxESS, totalESS]  = calculateESS(ensemble);
  
 disp('%%%%');
-disp(['(minESS): '  num2str(minESS) ]);
-disp(['(meanESS): ' num2str(meanESS) ]);
-disp(['(maxESS): '  num2str(maxESS) ]);
-disp(['(totalESS): 'num2str(totalESS) ]);
+disp(['(minESS): '   num2str(minESS) ]);
+disp(['(meanESS): '  num2str(meanESS) ]);
+disp(['(maxESS): '   num2str(maxESS) ]);
+disp(['(totalESS): ' num2str(totalESS) ]);
 disp('%%%%');
   
 plotAutoCorrelations(ensemble);

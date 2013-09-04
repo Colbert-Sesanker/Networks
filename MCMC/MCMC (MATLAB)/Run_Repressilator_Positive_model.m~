@@ -148,9 +148,9 @@ Model.noisyData  = speciesEstimates + ...
 
 
 MH(Model);
-MH_oneParamAt_a_Time(Model);
-MALA(Model);
-RMHMC(Model);
+% MH_oneParamAt_a_Time(Model);
+% MALA(Model);
+% RMHMC(Model);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%        
 % For ensemble analysis %
@@ -158,7 +158,9 @@ RMHMC(Model);
 Model.trajQuantiles                    = [.95 .5 .05];
 Model.paramQuantiles.params            = Model.sampledParam_idxs(:);
 Model.trajectoryQuantiles.statesToPlot = Model.totalStates(:);
-ensembleAnalysis(Model);
+Model.posteriorParamsToPlot            =
+ensembleData                           = load(['MH_' Model.equationName]);
+ensembleAnalysis(Model, ensembleData);
 
 
 

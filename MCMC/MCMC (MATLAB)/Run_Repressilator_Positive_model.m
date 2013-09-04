@@ -5,8 +5,8 @@ addpath(genpath('./'))
 % Close all Figures
 close all;
 
-Model.burnin                = 100;
-Model.numPosteriorSamples   = 50;
+Model.burnin                = 1;
+Model.numPosteriorSamples   = 25;
 
 
 % name for saving results
@@ -29,7 +29,7 @@ Model.addedNoise_SD                  = 0.5;
 % The initial step size for parameter updates
 Model.initialStepSize                = 0.1;
 % Step Size for standard Metropolis Hastings
-Model.mhStepSize                     = 0.1;
+Model.mhStepSize                     = 0.7;
 % The step size is adjusted online until acceptance ratio
 % is in the range given by 'stepSizeRange'
 Model.stepSizeRange                  = [70 80];
@@ -41,7 +41,7 @@ Model.plotProposedTrajectories       = true;
 % Use basic MALA algorithm without manifold information
 Model.isMala                         = false;
 % Number of steps to recalculate metric tensor (can set to 'randomWalk')
-Model.tensorMonitorRate              = 'randomWalk';
+Model.tensorMonitorRate              = 10;
 % Preconditioning matrix that don't use 
 Model.preConditionMatrix             = eye(Model.numSampledParams);
 %                                        inv(1e4*[4.0493   -5.3057   -0.8575
@@ -148,9 +148,9 @@ Model.noisyData  = speciesEstimates + ...
 
 
 MH(Model);
-MH_oneParamAt_a_Time(Model);
-MALA(Model);
-RMHMC(Model);
+% MH_oneParamAt_a_Time(Model);
+% MALA(Model);
+% RMHMC(Model);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%        
 % For ensemble analysis %
@@ -158,7 +158,9 @@ RMHMC(Model);
 Model.trajQuantiles                    = [.95 .5 .05];
 Model.paramQuantiles.params            = Model.sampledParam_idxs(:);
 Model.trajectoryQuantiles.statesToPlot = Model.totalStates(:);
-ensembleAnalysis(Model);
+Model.posteriorParamsToPlot            = Model.sampledParam_idxs(:);
+ensembleData                           = load(['MH_' Model.equationName]);
+ensembleAnalysis(Model, ensembleData);
 
 
 

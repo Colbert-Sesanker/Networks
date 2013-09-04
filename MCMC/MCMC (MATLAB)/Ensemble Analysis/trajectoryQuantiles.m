@@ -12,7 +12,7 @@ trajectories      = ensemble.trajectories;
 % trajectories
 sortedTrajs       = sort(trajectories);
 % Number of trajectories 
-numTrajs          = rows(sortedTrajs);
+numTrajs          = size(sortedTrajs, 1);
 quantile_trajs    = cell(numQuantiles);
 
 for i  = 1: numQuantiles    

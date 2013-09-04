@@ -163,7 +163,7 @@ accepted  = 0;
 attempted = 0;
 
 % Allocate Histories, LL is for log likelihood
-paramHistory        = zeros(numPosteriorSamples, numTotalParams);
+paramHistory        = zeros(numPosteriorSamples, numSampledParams);
 LL_History          = zeros(numPosteriorSamples, numStates);
 trajectoryHistory   = cell(1, numPosteriorSamples);
 
@@ -393,7 +393,7 @@ while continueIterations
         posteriorSampleNum = iterationNum -... 
                              burnin;
         
-        paramHistory(posteriorSampleNum, :)        = currentParams;
+        paramHistory(posteriorSampleNum, :)        = currentSampledParams;
         LL_History(posteriorSampleNum, :)          = current_LL;         
         trajectoryHistory{posteriorSampleNum}      = currentSpeciesEstimates;        
         

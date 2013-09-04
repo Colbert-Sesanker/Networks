@@ -1,7 +1,7 @@
 function plotParamPosteriors(ensemble)
 posteriorParams   = ensemble.samples;   
                     ensemble.posteriorParamsToPlot;
-                  posterior(idx);
+                    posterior(idx);
 
 for param_idx     = param_idxs
     paramName     = ensemble.paramMap{param_idx}; 

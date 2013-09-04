@@ -16,15 +16,15 @@ function [minESS, meanESS,...
 maxLags           = ensemble.autoCorr.maxLags;
 isTimeNormalized  = ensemble.ESS.isTimeNormalized;
 posteriorTime     = ensemble.posteriorTime;
-
+samples           = ensemble.samples;
 % ensemble is a numSamples x numParams matrix
 
-[numSamples, numParams] = size(ensemble);
+[numSamples, numParams] = size(samples);
 
 % autocorrelation of each parameter
-auto_corrs = zeros(numSamples, numParams);
+%auto_corrs = zeros(numSamples, numParams);
 for i = 1: numParams
-    auto_corrs(:, i) =  autocorr(ensemble(:, i), maxLags); 
+    auto_corrs(:, i) =  autocorr(samples(:, i), maxLags); 
 end
 
 half_autoCorr_length = floor(size(auto_corrs, 1) / 2);
