@@ -1,19 +1,28 @@
 % plots quantile trajectories for specified quantiles 
 
-function quantile_trajs = plotTrajectoryQuantiles(ensemble, state)
+function plotTrajectoryQuantiles(ensemble)
 
-stateName      =  ensemble.stateMap{state}; 
-quantile_trajs = trajectoryQuantiles(ensemble, state);
+states             =  ensemble.trajectoryQuantiles.statesToPlot;
 
-for i = 1: length(quantile_trajs)
-    
-    hold on;
-    figure(50);
-    plot(quantile_trajs{i}); 
-    xlabel('time'); 
-    ylabel(stateName);
-    title(['95% confidence intervals on trajectories: ' stateName]);
-    
+
+for i = 1: length(states)    
+    stateNames{i}  =  ensemble.stateMap{states(i)}; 
+end
+
+for i = 1: length(states)
+    quantile_trajs = trajectoryQuantiles(ensemble, states(i));
+
+    for j = 1: length(quantile_trajs)        
+        hold on;
+        figure(50 + i);
+        plot(quantile_trajs{j}); 
+        xlabel('time'); 
+        ylabel(stateNames{i});
+        title(['95% confidence intervals on trajectories: '...
+                stateNames{i}]);
+        
+    end % for
+
 end % for
 
-end 
+end % function

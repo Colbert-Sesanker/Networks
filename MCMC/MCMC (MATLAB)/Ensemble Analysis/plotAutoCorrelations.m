@@ -1,15 +1,22 @@
 function plotAutoCorrelations(ensemble)
-param_idxs       = ensemble.autoCorr.params;   
-maxLag           = ensemble.autoCorr.maxLag;
+param_idxs        = ensemble.autoCorr.params;
+   
+for i = 1: length(param_idxs)    
+    paramNames{i} =  ensemble.paramMap{param_idxs(i)}; 
+end
 
-for param_idx     = param_idxs
+maxLags           = ensemble.autoCorr.maxLags;
+
+for  i = 1: length(param_idxs)   
+
+    param_idx     = param_idxs(i);
     paramName     = ensemble.paramMap{param_idx}; 
     param_samples = ensemble.samples(:, param_idx);    
-    auto_corr     = autocorr(param_samples, maxLag);
+    auto_corr     = autocorr(param_samples, maxLags);
     figure();
     plot(auto_corr); 
     xlabel('lag');    
-    title(['Auto-Correlation: ' paramName]);
+    title(['Auto-Correlation: ' paramNames{}]);
 end 
 
 end 

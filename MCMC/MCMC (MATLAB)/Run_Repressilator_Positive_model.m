@@ -18,6 +18,7 @@ Model.equations_AD                   = @RepressilatorPositive_AD;
 % indexes of observed species in state vector
 Model.observedStates                 = [1 2 3];
 Model.unobservedStates               = [];
+Model.totalStates                    = 1:3;
 % indexes of sampled parameters 
 % All other parameters are held fixed
 sampledParam_idxs                    = [1 5 9];
@@ -114,10 +115,13 @@ paramMap = {...
                'b1' 'b2' 'b3'      ...
                'y1' 'y2' 'y3'      ...              
            };
+           
+stateMap = {'A' 'B' 'C'};
     
 Model.totalParams        = params;
 Model.numTotalParams     = length(params);
 Model.paramMap           = paramMap;
+Model.stateMap           = stateMap;
 Model.initialValues      = initialValues;
 
 % Integrate model equations
@@ -138,7 +142,6 @@ addedNoise_SD    = Model.addedNoise_SD;
 Model.noisyData  = speciesEstimates + ...
                    randn(numStates, numTimePts) .* addedNoise_SD;
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%        
 % Call sampling routines %
 %%%%%%%%%%%%%%%%%%%%%%%%%
@@ -149,7 +152,13 @@ MH_oneParamAt_a_Time(Model);
 MALA(Model);
 RMHMC(Model);
 
-ensembleAnalysis(Model)
+%%%%%%%%%%%%%%%%%%%%%%%%%        
+% For ensemble analysis %
+%%%%%%%%%%%%%%%%%%%%%%%%%
+Model.trajQuantiles                    = [.95 .5 .05];
+Model.paramQuantiles.params            = Model.sampledParam_idxs(:);
+Model.trajectoryQuantiles.statesToPlot = Model.totalStates(:);
+ensembleAnalysis(Model);
 
 
 

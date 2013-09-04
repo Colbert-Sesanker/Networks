@@ -1,9 +1,9 @@
-
 % returns quantile trajectories for specified quantiles 
+
 function quantile_trajs = trajectoryQuantiles(ensemble, state)
 
-quantiles         =  ensemble.trajQuantiles{state};
-numQuantiles      =  length(quantiles);
+quantiles         = ensemble.trajQuantiles{state};
+numQuantiles      = length(quantiles);
  
 % Trajectories are rows, timePoints are columns
 trajectories      = ensemble.trajectories;

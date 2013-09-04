@@ -18,7 +18,6 @@ ensemble.trajQuantiles         = Model.trajQuantiles;
 ensemble.trajectories          = ensembleData.trajectoryHistory;
 ensemble.stateMap              = Model.stateMap;
 ensemble.paramQuantiles.params = Model.paramQuantiles.params;
-ensemble.posteriorParamsToPlot = Model.posteriorParamsToPlot
 
 ensemble.trajectoryQuantiles.statesToPlot = Model.trajectoryQuantiles.statesToPlot;
 
