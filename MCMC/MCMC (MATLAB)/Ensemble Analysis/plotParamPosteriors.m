@@ -1,16 +1,16 @@
 function plotParamPosteriors(ensemble)
 posteriorParams   = ensemble.samples;   
-                    ensemble.posteriorParamsToPlot;
-                    posterior(idx);
+param_idxs        = ensemble.posteriorParamsToPlot;             
+bins              = ensemble.posteriorParamPlotBins;
 
-for param_idx     = param_idxs
+for p     = 1:length(param_idxs)
+    param_idx     = param_idxs(p);
     paramName     = ensemble.paramMap{param_idx}; 
-    param_samples = ensemble.samples(:, param_idx);    
-    auto_corr     = autocorr(param_samples, maxLag);
-    figure();
-    plot(auto_corr); 
-    xlabel('lag');    
-    title(['Auto-Correlation: ' paramName]);
+    param_samples = posteriorParams(:, p);      
+    figure(100 + p);
+    hist(param_samples, bins);
+    xlabel('param value');    
+    title(['Posterior of Param ' paramName]);
 end 
 
 end 

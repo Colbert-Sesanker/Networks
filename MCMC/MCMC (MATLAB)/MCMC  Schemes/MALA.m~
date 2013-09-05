@@ -25,7 +25,7 @@ observedStates                     = Model.observedStates;
 unobservedStates                   = Model.unobservedStates;
 totalStates                        = length(observedStates) + ...
                                      length(unobservedStates);
-addedNoise_SD                       = Model.addedNoise_SD;
+addedNoise_SD                      = Model.addedNoise_SD;
 equations                          = Model.equations;
 equations_AD                       = Model.equations_AD;
 sensitivityMethod                  = Model.sensitivityMethod;
@@ -126,13 +126,13 @@ end
                           equationsSens,... 
                           initialValues,       initialValuesSens,          ...
                           timePoints,          numStates,                  ...  
-                          numSampledParams,    totalParams,            ...
+                          numSampledParams,    totalParams,                ...
                           sampledParam_idxs,   epsilon                     ...                                 
                         );
 
 speciesEstimates  = extractSpeciesTrajectories(trajectories,...
                                                numStates);
-
+                                           
 gradient_LL = LL_Gradient(...
                             sampledParams,      sensitivities_1,... 
                             numSampledParams,   observedStates,...
@@ -186,7 +186,7 @@ elseif calculateTensor
 
     end % if   
     
-    secondTerm  = zeros(1, numSampledParams); % this is hack
+    secondTerm  = zeros(1, numSampledParams); % this is a hack
     thirdTerm   = zeros(1, numSampledParams);
 
 end % if
@@ -209,10 +209,11 @@ accepted  = 0;
 attempted = 0;
 
 % Allocate Histories, LL is for log likelihood
-paramHistory        = zeros(numPosteriorSamples, numTotalParams);
+paramHistory        = zeros(numPosteriorSamples, numSampledParams);
 LL_History          = zeros(numPosteriorSamples, numStates);
 metricTensorHistory = cell(1, numPosteriorSamples);
-trajectoryHistory   = cell(1, numPosteriorSamples);
+trajectoryHistory        = zeros(numStates, numPosteriorSamples, timePoints);
+trajectoryHistory   = cell(1, numStates)
 
 % Set monitor rate for adapting step sizes
 stepSizeMonitorRate = 10;
@@ -286,8 +287,7 @@ while continueIterations
          
         
     speciesEstimates  = extractSpeciesTrajectories(trajectories,...
-                                                   numStates);
-                                   
+                                                   numStates);                                   
          
     % plot trajectories as proposed 
     if  plotProposedTrajectories
@@ -465,16 +465,18 @@ while continueIterations
         posteriorSampleNum = iterationNum -... 
                              burnin;
         
-        paramHistory(posteriorSampleNum, :)        = currentParams;
+        paramHistory(posteriorSampleNum, :)        = currentSampledParams;
         LL_History(posteriorSampleNum, :)          = current_LL;        
         metricTensorHistory{posteriorSampleNum}    = currentG;
-        trajectoryHistory{posteriorSampleNum}      = currentSpeciesEstimates;        
+        
+        for p = 1: numStates        
+            trajectoryHistory(p, posteriorSampleNum, :) = currentSpeciesEstimates(numStates, :);             
+        end
         
         if iterationNum == burnin + numPosteriorSamples
             % N Posterior samples have been collected so stop
             continueIterations = false;
-        end     
-        
+        end
 
     else        
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

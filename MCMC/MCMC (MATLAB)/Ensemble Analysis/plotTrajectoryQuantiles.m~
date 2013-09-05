@@ -3,7 +3,7 @@
 function plotTrajectoryQuantiles(ensemble)
 
 states             =  ensemble.trajectoryQuantiles.statesToPlot;
-
+numQuantiles       =  
 
 for i = 1: length(states)    
     stateNames{i}  =  ensemble.stateMap{states(i)}; 
@@ -12,8 +12,7 @@ end
 for i = 1: length(states)
     quantile_trajs = trajectoryQuantiles(ensemble, states(i));
 
-    for j = 1: length(quantile_trajs)
-        
+    for j = 1: size(quantile)        
         hold on;
         figure(50 + i);
         plot(quantile_trajs{j}); 
@@ -24,4 +23,6 @@ for i = 1: length(states)
         
     end % for
 
-end 
+end % for
+
+end % function

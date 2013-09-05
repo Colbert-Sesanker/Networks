@@ -38,6 +38,7 @@ numPosteriorSamples                = Model.numPosteriorSamples;
 equationName                       = Model.equationName;
 totalParams                        = Model.totalParams;
 timePoints                         = Model.timeData;
+numTimePoints                      = length(timePoints);
 plotProposedTrajectories           = Model.plotProposedTrajectories;
 
 sampledParam_idxs                  = Model.sampledParam_idxs;
@@ -165,10 +166,10 @@ attempted = 0;
 % Allocate Histories, LL is for log likelihood
 paramHistory        = zeros(numPosteriorSamples, numSampledParams);
 LL_History          = zeros(numPosteriorSamples, numStates);
-trajectoryHistory   = cell(1, numPosteriorSamples);
+trajectoryHistory   = zeros(numStates, numPosteriorSamples, numTimePoints);
 
 % Set monitor rate for adapting step sizes
-stepSizeMonitorRate = 10;
+stepSizeMonitorRate = Model.stepSizeMonitorRate;
 
 % Allocate vector to store acceptance ratios
 acceptanceRatios    = zeros(1, burnin +...
@@ -349,6 +350,10 @@ while continueIterations
         currentSpeciesEstimates    = speciesEstimates;                   
     end
     
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Display statistics and plots in Real time %
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+    
     % Keep track of acceptance ratios at each iteration number
     acceptanceRatio                = 100*accepted / attempted;
     acceptanceRatios(iterationNum) = acceptanceRatio; 
@@ -394,8 +399,11 @@ while continueIterations
                              burnin;
         
         paramHistory(posteriorSampleNum, :)        = currentSampledParams;
-        LL_History(posteriorSampleNum, :)          = current_LL;         
-        trajectoryHistory{posteriorSampleNum}      = currentSpeciesEstimates;        
+        LL_History(posteriorSampleNum, :)          = current_LL;  
+        
+        for state = 1: numStates        
+            trajectoryHistory(state, posteriorSampleNum, :) = currentSpeciesEstimates(state, :);             
+        end      
         
         if iterationNum == burnin + numPosteriorSamples
             % N Posterior samples have been collected so stop

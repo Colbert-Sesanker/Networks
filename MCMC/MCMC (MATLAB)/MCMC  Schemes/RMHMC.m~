@@ -51,6 +51,7 @@ numPosteriorSamples                = Model.numPosteriorSamples;
 equationName                       = Model.equationName;
 totalParams                        = Model.totalParams;
 timePoints                         = Model.timeData;
+numTimePoints                      = length(timePoints);
 zeroMetricTensorDerivatives        = Model.zeroMetricTensorDerivatives;
 plotProposedTrajectories           = Model.plotProposedTrajectories;
 
@@ -160,6 +161,8 @@ elseif calculateTensor
 
     identity           = eye(numSampledParams);                                     
     currentInvG        = identity / (currentG + identity*1e-6);
+    G                  = currentG;
+    invG               = currentInvG; 
 
     if zeroMetricTensorDerivatives
 
@@ -183,10 +186,10 @@ elseif calculateTensor
       [currentInvGdG,...
        currentTraceInvGdG]  = calcInvGdG_terms(currentInvG, deriv_G,...
                                                numSampledParams); 
-      invGdG      = currentInvGdG;      
-      traceInvGdG = currentInvGdG;
-
-    end % if   
+    end % if  
+    
+    invGdG      = currentInvGdG;      
+    traceInvGdG = currentTraceInvGdG;
 
 end % if
 
@@ -207,13 +210,14 @@ accepted  = 0;
 attempted = 0;
 
 % Allocate Histories, LL is for log likelihood
-paramHistory        = zeros(numPosteriorSamples, numTotalParams);
+paramHistory        = zeros(numPosteriorSamples, numSampledParams);
 LL_History          = zeros(numPosteriorSamples, numStates);
 metricTensorHistory = cell(1, numPosteriorSamples);
-trajectoryHistory   = cell(1, numPosteriorSamples);
+trajectoryHistory   = zeros(numStates, numPosteriorSamples, numTimePoints);
 
 % Set monitor rate for adapting step sizes
-monitorRate         = 40;
+stepSizeMonitorRate = Model.stepSizeMonitorRate;   = 40;
+
 
 % Allocate vector to store acceptance ratios
 acceptanceRatios    = zeros(1, burnin +...
@@ -392,14 +396,17 @@ while continueIterations
             
             proposedMomentumFrac = currentProposedMomentum + ...
                   (stepSize / 2) * (currentGrad_LL' - 0.5*currentTraceInvGdG' + quadraticTerm' );
+            
+            currentInvGMomentum = currentInvG * proposedMomentumFrac;
              
-            newSampledParams = currentSampledParams + (stepSize / 2) * currentInvGMomentum' + ...
-                                                      (stepSize / 2) * invGMomentum' ;
-
+            newSampledParams = currentSampledParams + stepSize * currentInvGMomentum' ;     
+            
+            newParams        = updateTotalParameters( totalParams,...
+                                                      newSampledParams,...
+                                                      sampledParam_idxs); 
             
              
-        end % if that decides between hmc / rmhmc
-        
+        end % if that decides between hmc / rmhmc 
                              
         
         % plot trajectories as proposed 
@@ -558,6 +565,10 @@ while continueIterations
                    
     end
     
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Display statistics and plots in Real time %
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+    
     % Keep track of acceptance ratios at each iteration number
     acceptanceRatio                = 100*accepted / attempted;
     acceptanceRatios(iterationNum) = acceptanceRatio; 
@@ -603,10 +614,13 @@ while continueIterations
         posteriorSampleNum = iterationNum -... 
                              burnin;
         
-        paramHistory(posteriorSampleNum, :)        = currentParams;
+        paramHistory(posteriorSampleNum, :)        = currentSampledParams;
         LL_History(posteriorSampleNum, :)          = current_LL;        
         metricTensorHistory{posteriorSampleNum}    = currentG;
-        trajectoryHistory{posteriorSampleNum}      = currentSpeciesEstimates;        
+        
+        for state = 1: numStates        
+            trajectoryHistory(state, posteriorSampleNum, :) = currentSpeciesEstimates(state, :);             
+        end        
         
         if iterationNum == burnin + numPosteriorSamples
             % N Posterior samples have been collected so stop

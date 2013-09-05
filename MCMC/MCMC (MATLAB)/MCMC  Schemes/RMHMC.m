@@ -51,6 +51,7 @@ numPosteriorSamples                = Model.numPosteriorSamples;
 equationName                       = Model.equationName;
 totalParams                        = Model.totalParams;
 timePoints                         = Model.timeData;
+numTimePoints                      = length(timePoints);
 zeroMetricTensorDerivatives        = Model.zeroMetricTensorDerivatives;
 plotProposedTrajectories           = Model.plotProposedTrajectories;
 
@@ -212,10 +213,10 @@ attempted = 0;
 paramHistory        = zeros(numPosteriorSamples, numSampledParams);
 LL_History          = zeros(numPosteriorSamples, numStates);
 metricTensorHistory = cell(1, numPosteriorSamples);
-trajectoryHistory   = cell(1, numPosteriorSamples);
+trajectoryHistory   = zeros(numStates, numPosteriorSamples, numTimePoints);
 
 % Set monitor rate for adapting step sizes
-monitorRate         = 40;
+stepSizeMonitorRate = Model.stepSizeMonitorRate;   = 40;
 
 % Allocate vector to store acceptance ratios
 acceptanceRatios    = zeros(1, burnin +...
@@ -563,6 +564,10 @@ while continueIterations
                    
     end
     
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Display statistics and plots in Real time %
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+    
     % Keep track of acceptance ratios at each iteration number
     acceptanceRatio                = 100*accepted / attempted;
     acceptanceRatios(iterationNum) = acceptanceRatio; 
@@ -611,7 +616,10 @@ while continueIterations
         paramHistory(posteriorSampleNum, :)        = currentSampledParams;
         LL_History(posteriorSampleNum, :)          = current_LL;        
         metricTensorHistory{posteriorSampleNum}    = currentG;
-        trajectoryHistory{posteriorSampleNum}      = currentSpeciesEstimates;        
+        
+        for state = 1: numStates        
+            trajectoryHistory(state, posteriorSampleNum, :) = currentSpeciesEstimates(state, :);             
+        end        
         
         if iterationNum == burnin + numPosteriorSamples
             % N Posterior samples have been collected so stop
@@ -624,7 +632,7 @@ while continueIterations
         % Adjust step size based on acceptance ratio  %
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
         
-        if mod(iterationNum, monitorRate) == 0            
+        if mod(iterationNum, stepSizeMonitorRate) == 0            
             minAccept = stepSizeRange(1); 
             maxAccept = stepSizeRange(2);
             % amount to increase/decrease step size 

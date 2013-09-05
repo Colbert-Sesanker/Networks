@@ -2,18 +2,20 @@
 
 function quantile_trajs = trajectoryQuantiles(ensemble, state)
 
-quantiles         = ensemble.trajQuantiles{state};
+quantiles         = ensemble.trajQuantiles;
 numQuantiles      = length(quantiles);
  
 % Trajectories are rows, timePoints are columns
-trajectories      = ensemble.trajectories;
+% want a submatix here. should be a cleaner way to do this
+trajectories(:,:)  = ensemble.trajectories(state, :, :); 
+
 % At each time point, sort the trajectories, this 
 % will yeild a set of trajectory qualtiles, none of which are actual
 % trajectories
 sortedTrajs       = sort(trajectories);
 % Number of trajectories 
 numTrajs          = size(sortedTrajs, 1);
-quantile_trajs    = cell(numQuantiles);
+quantile_trajs    = cell(1, numQuantiles);
 
 for i  = 1: numQuantiles    
     

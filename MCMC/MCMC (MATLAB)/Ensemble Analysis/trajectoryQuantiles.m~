@@ -1,17 +1,19 @@
 % returns quantile trajectories for specified quantiles 
+
 function quantile_trajs = trajectoryQuantiles(ensemble, state)
 
-quantiles         = ensemble.trajQuantiles{state};
+quantiles         = ensemble.trajQuantiles(state);
 numQuantiles      = length(quantiles);
  
 % Trajectories are rows, timePoints are columns
-trajectories      = ensemble.trajectories;
+trajectories(:,:)  = ensemble.trajectories(state, :, :);
+
 % At each time point, sort the trajectories, this 
 % will yeild a set of trajectory qualtiles, none of which are actual
 % trajectories
 sortedTrajs       = sort(trajectories);
 % Number of trajectories 
-numTrajs          = rows(sortedTrajs);
+numTrajs          = size(sortedTrajs, 1);
 quantile_trajs    = cell(numQuantiles);
 
 for i  = 1: numQuantiles    

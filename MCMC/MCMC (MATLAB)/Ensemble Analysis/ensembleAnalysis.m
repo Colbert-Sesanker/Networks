@@ -19,6 +19,8 @@ ensemble.trajectories          = ensembleData.trajectoryHistory;
 ensemble.stateMap              = Model.stateMap;
 ensemble.paramQuantiles.params = Model.paramQuantiles.params;
 ensemble.posteriorParamsToPlot = Model.posteriorParamsToPlot;
+% Number of bins to use in posterior param plot
+ensemble.posteriorParamPlotBins = 200;
 
 ensemble.trajectoryQuantiles.statesToPlot = Model.trajectoryQuantiles.statesToPlot;
 
@@ -27,7 +29,8 @@ ensemble.trajectoryQuantiles.statesToPlot = Model.trajectoryQuantiles.statesToPl
 %%%%%%%%%%%%%%%%%%%%%%%%%
 [minESS, meanESS,...
  maxESS, totalESS]  = calculateESS(ensemble);
- 
+
+disp('Effective Sample Size: ');
 disp('%%%%');
 disp(['(minESS): '   num2str(minESS) ]);
 disp(['(meanESS): '  num2str(meanESS) ]);

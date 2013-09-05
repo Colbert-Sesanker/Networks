@@ -6,7 +6,7 @@ addpath(genpath('./'))
 close all;
 
 Model.burnin                = 1;
-Model.numPosteriorSamples   = 25;
+Model.numPosteriorSamples   = 200;
 
 
 % name for saving results
@@ -27,12 +27,14 @@ Model.sampledParam_idxs              = sampledParam_idxs;
 % Noise
 Model.addedNoise_SD                  = 0.5;
 % The initial step size for parameter updates
-Model.initialStepSize                = 0.1;
+Model.initialStepSize                = 1;
 % Step Size for standard Metropolis Hastings
 Model.mhStepSize                     = 0.7;
 % The step size is adjusted online until acceptance ratio
 % is in the range given by 'stepSizeRange'
 Model.stepSizeRange                  = [70 80];
+% Adjust Step-Size after stepSizeMonitorRate iterations
+Model.stepSizeMonitorRate            = 10;
 % epsilon is for finite differences
 Model.epsilon                        = 5e-1; 
 Model.zeroMetricTensorDerivatives    = true;
@@ -147,19 +149,21 @@ Model.noisyData  = speciesEstimates + ...
 %%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-MH(Model);
+% MH(Model);
 % MH_oneParamAt_a_Time(Model);
-% MALA(Model);
+  MALA(Model);
 % RMHMC(Model);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%        
 % For ensemble analysis %
 %%%%%%%%%%%%%%%%%%%%%%%%%
+
+% 95%, 50% and 5% confidence intervals on trajectories
 Model.trajQuantiles                    = [.95 .5 .05];
-Model.paramQuantiles.params            = Model.sampledParam_idxs(:);
-Model.trajectoryQuantiles.statesToPlot = Model.totalStates(:);
-Model.posteriorParamsToPlot            = Model.sampledParam_idxs(:);
-ensembleData                           = load(['MH_' Model.equationName]);
+Model.paramQuantiles.params            = Model.sampledParam_idxs;
+Model.trajectoryQuantiles.statesToPlot = Model.totalStates;
+Model.posteriorParamsToPlot            = Model.sampledParam_idxs;
+ensembleData                           = load(['mMALA_' Model.equationName]);
 ensembleAnalysis(Model, ensembleData);
 
 

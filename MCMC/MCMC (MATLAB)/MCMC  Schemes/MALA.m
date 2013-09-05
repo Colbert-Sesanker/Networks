@@ -48,6 +48,7 @@ numPosteriorSamples                = Model.numPosteriorSamples;
 equationName                       = Model.equationName;
 totalParams                        = Model.totalParams;
 timePoints                         = Model.timeData;
+numTimePoints                      = length(timePoints);
 zeroMetricTensorDerivatives        = Model.zeroMetricTensorDerivatives;
 plotProposedTrajectories           = Model.plotProposedTrajectories;
 
@@ -132,7 +133,7 @@ end
 
 speciesEstimates  = extractSpeciesTrajectories(trajectories,...
                                                numStates);
-
+                                           
 gradient_LL = LL_Gradient(...
                             sampledParams,      sensitivities_1,... 
                             numSampledParams,   observedStates,...
@@ -212,10 +213,11 @@ attempted = 0;
 paramHistory        = zeros(numPosteriorSamples, numSampledParams);
 LL_History          = zeros(numPosteriorSamples, numStates);
 metricTensorHistory = cell(1, numPosteriorSamples);
-trajectoryHistory   = cell(1, numPosteriorSamples);
+trajectoryHistory   = zeros(numStates, numPosteriorSamples, numTimePoints);
+
 
 % Set monitor rate for adapting step sizes
-stepSizeMonitorRate = 10;
+stepSizeMonitorRate = Model.stepSizeMonitorRate;
 
 % Allocate vector to store acceptance ratios
 acceptanceRatios    = zeros(1, burnin +...
@@ -420,6 +422,11 @@ while continueIterations
                    
     end
     
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Display statistics and plots in Real time %
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+    
     % Keep track of acceptance ratios at each iteration number
     acceptanceRatio                = 100*accepted / attempted;
     acceptanceRatios(iterationNum) = acceptanceRatio; 
@@ -467,13 +474,15 @@ while continueIterations
         paramHistory(posteriorSampleNum, :)        = currentSampledParams;
         LL_History(posteriorSampleNum, :)          = current_LL;        
         metricTensorHistory{posteriorSampleNum}    = currentG;
-        trajectoryHistory{posteriorSampleNum}      = currentSpeciesEstimates;        
+        
+        for state = 1: numStates        
+            trajectoryHistory(state, posteriorSampleNum, :) = currentSpeciesEstimates(state, :);             
+        end
         
         if iterationNum == burnin + numPosteriorSamples
             % N Posterior samples have been collected so stop
             continueIterations = false;
-        end     
-        
+        end
 
     else        
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

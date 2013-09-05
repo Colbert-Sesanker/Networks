@@ -52,7 +52,7 @@ for i = 1:numParams
 end
 
 
-monotoneEstimators = zeros(numParams);
+monotoneEstimators = zeros(1, numParams);
 for i = 1:numParams
     % Get indices of all Gammas greater than 0
     % Gammas decrease monotonically, so length of positive Gammas
