@@ -13,7 +13,7 @@ for i = 1: length(states)
     quantile_trajs = trajectoryQuantiles(ensemble, states(i));
 
     for j = 1: numQuantiles    
-        quantile_trajs{j}
+        quantile_trajs{j};
         hold on;
         figure(50 + i);
         plot(quantile_trajs{j}); 

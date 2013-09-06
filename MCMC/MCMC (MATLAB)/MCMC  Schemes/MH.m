@@ -291,8 +291,11 @@ while continueIterations
 
 
         % Ocassionally  trajectories may get imaginary artifacts                   
-        if any(imag(trajectories(:)))
+        if any(imag(trajectories(:))) 
             error('Trajectory has imaginary components');
+            
+        elseif hasNan(trajectories(:))
+               error('Integration_Error');
         end % if
 
         speciesEstimates  = extractSpeciesTrajectories(trajectories,...

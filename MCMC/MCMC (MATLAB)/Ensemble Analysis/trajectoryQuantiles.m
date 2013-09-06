@@ -13,6 +13,7 @@ trajectories(:,:)  = ensemble.trajectories(state, :, :);
 % will yeild a set of trajectory qualtiles, none of which are actual
 % trajectories
 sortedTrajs       = sort(trajectories);
+
 % Number of trajectories 
 numTrajs          = size(sortedTrajs, 1);
 quantile_trajs    = cell(1, numQuantiles);
@@ -22,17 +23,21 @@ for i  = 1: numQuantiles
     q     = quantiles(i);
     index = q * numTrajs;
     
-    if isinteger(index)
-        quantile_trajs{i} = sortedTrajs(:, index);
+    if ceil(index) == floor(index)
+        quantile_trajs{i} = sortedTrajs(index, :);
     else
         floor_idx = floor(index);
-        ceil_idx  = ceil(index);     
+        ceil_idx  = ceil(index) ;    
         
-        quantile_trajs{i} = sortedTrajs(floor_idx, :) + ((index - floor_idx) / (ceil_idx - floor_idx)) *...
-                                                                                                        ...
-                                                        (sortedTrajs(ceil_idx, :) - sortedTrajs(floor_idx, :));
+        quantile_trajs{i} = sortedTrajs(floor_idx, :) + ...
+                                                        ...
+                           ((index - floor_idx) / (ceil_idx - floor_idx)) *...
+                                                                           ...
+                           (sortedTrajs(ceil_idx, :) - sortedTrajs(floor_idx, :));
     end % if   
     
 end % for
+
+
 
 end 
