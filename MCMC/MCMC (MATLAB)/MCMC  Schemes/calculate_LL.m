@@ -2,12 +2,12 @@
 % LL is for log-likelihood
 
 function LL = calculate_LL(speciesEstimates, Y,... 
-                           CurrentNoise,     SpeciesObserved) 
+                           currentNoise, speciesObserved) 
                        
-  for n = SpeciesObserved         
+  for n = speciesObserved         
           
       LL(n) = logNormPDF(speciesEstimates(n, :), ...
-                         Y(n, :), CurrentNoise(n));
+                         Y(n, :), currentNoise(n));
   end
   
   LL = sum(LL);

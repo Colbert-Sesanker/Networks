@@ -6,11 +6,11 @@ addpath(genpath('./'))
 close all;
 
 Model.burnin                = 50;
-Model.numPosteriorSamples   = 500;
+Model.numPosteriorSamples   = 350;
 
 
 % name for saving results
-Model.equationName                   = 'Repressilator_Positive_Flat_prior'; 
+Model.equationName                   = 'Repressilator_Positive_unif1'; 
 % function handle of model equations 
 Model.equations                      = @RepressilatorPositive;
 % function handle of model for automatic differentiation
@@ -68,11 +68,13 @@ Model.sensitivityMethod              = sensitivityMethods{3};
 % The Prior Struct holds all information regarding priors
 
 % Used in calculating prior probabilities of current and proposed parameters
-Prior.prior                   = @repressilatorPrior;
+Prior.prior                   = @uniformPrior;
 % Used in computing natural gradient of posterior
 Prior.priorDerivative         = @repressilatorPriorDerivative;
 % Used in computing the metric tensor of posterior
+
 Prior.priorSecondDerivative   = @repressilatorPriorSecondDerivative;
+                              
 % Used in computing the derivative of metric tensor for the Laplace
 % Beltrami Operator
 Prior.priorThirdDerivative    = @repressilatorPriorThirdDerivative;

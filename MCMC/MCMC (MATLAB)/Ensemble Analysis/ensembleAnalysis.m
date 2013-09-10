@@ -19,8 +19,10 @@ ensemble.trajectories          = ensembleData.trajectoryHistory;
 ensemble.stateMap              = Model.stateMap;
 ensemble.paramQuantiles.params = Model.paramQuantiles.params;
 ensemble.posteriorParamsToPlot = Model.posteriorParamsToPlot;
+ensemble.timePoints            = Model.timeData;
 % Number of bins to use in posterior param plot
-ensemble.posteriorParamPlotBins = 200;
+ensemble.posteriorParamPlotBins   = 200;
+ensemble.posteriorParamAxisRanges = {[5.3 6.3 0 9], [5.3 6.3 0 9], [5.3 6.3 0 9]}; %Model.posteriorParamAxisRanges;{[5 10], [5 10], [5 10]};
 
 ensemble.trajectoryQuantiles.statesToPlot = Model.trajectoryQuantiles.statesToPlot;
 
@@ -39,8 +41,10 @@ disp(['(totalESS): ' num2str(totalESS) ]);
 disp('%%%%');
   
 plotAutoCorrelations(ensemble);
-plotTrajectoryQuantiles(ensemble);
+plotTrajectoryConfidence(ensemble);
 plotParamPosteriors(ensemble);
+figStart = 500;
+plot3dParamSlices(ensemble.samples, figStart);
 
 
 

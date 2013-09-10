@@ -6,11 +6,11 @@ addpath(genpath('./'))
 close all;
 
 Model.burnin                = 50;
-Model.numPosteriorSamples   = 500;
+Model.numPosteriorSamples   = 350;
 
 
 % name for saving results
-Model.equationName                   = 'Repressilator_Positive_Flat_prior'; 
+Model.equationName                   = 'Repressilator_Positive_noise1'; 
 % function handle of model equations 
 Model.equations                      = @RepressilatorPositive;
 % function handle of model for automatic differentiation
@@ -25,7 +25,7 @@ sampledParam_idxs                    = [1 5 9];
 Model.numSampledParams               = length(sampledParam_idxs);
 Model.sampledParam_idxs              = sampledParam_idxs;
 % Noise
-Model.addedNoise_SD                  = 0.5;
+Model.addedNoise_SD                  = 5;
 % The initial step size for parameter updates
 Model.initialStepSize                = .75;
 % Step Size for standard Metropolis Hastings

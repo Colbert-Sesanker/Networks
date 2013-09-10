@@ -1,17 +1,17 @@
-function priorProb = gammaPrior(paramNum, param)
+function priorProb = gammaPriorFHN(paramNum, param)
 
 %%%%%%%%%
 % log Gamma %
 %%%%%%%%%
+shape = 1;
+scale = 3;
 
 if (param < 0)
    priorProb = - Inf;
 else
 % Calculate probability of value from the prior
-if paramNum == 9
-   priorProb = log(gampdf(param, 1, sqrt(24)));
-else    
-   priorProb = 0;
+   priorProb = log(gampdf(param, shape, scale));
+
 end
       
         

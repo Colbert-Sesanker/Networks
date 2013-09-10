@@ -511,10 +511,10 @@ while continueIterations
                     stepSize = 1;
                 end
              else                
-                if stepSize < .6 
-                   stepSize = .6;
+                if stepSize < .1 
+                   stepSize = .1;
                 elseif stepSize > 1.5
-                    stepSize = 1.5;
+                   stepSize = 1.5;
                 end
              end % if
             
