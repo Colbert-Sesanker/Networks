@@ -45,8 +45,7 @@ G = zeros(numSampledParams,...
     G           = U * bounded_singularValues * V'; 
     
     % multiply G by beta in [0,1] for tempering
-    beta = 1;   % setting beta == 1 makes G no longer the mertic tensor
-    G = beta*G;
+    G = G;
     
     % In addition to bounding singular values
     % add diagonal dust to improve rank     

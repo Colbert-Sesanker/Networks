@@ -10,6 +10,7 @@ function LL = calculate_LL(speciesEstimates, Y,...
                          Y(n, :), currentNoise(n));
   end
   
+  % This sum is in [-inf, 0]
   LL = sum(LL);
    
 end

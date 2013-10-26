@@ -48,11 +48,13 @@ numPosteriorSamples                = Model.numPosteriorSamples;
 equationName                       = Model.equationName;
 totalParams                        = Model.totalParams;
 timePoints                         = Model.timeData;
+numTimePoints                      = length(timePoints);
 zeroMetricTensorDerivatives        = Model.zeroMetricTensorDerivatives;
 plotProposedTrajectories           = Model.plotProposedTrajectories;
 
 sampledParam_idxs                  = Model.sampledParam_idxs;
 epsilon                            = Model.epsilon;
+beta                               = Model.beta;
 
 
 % Model specific priors:
@@ -86,7 +88,7 @@ calculateTensor         = ~ Model.isMala;
 % each species. Technically the noise can be a matrix for
 % each time point for each species
 if isscalar(addedNoise_SD)
-    currentNoise = ones(1, numStates) * addedNoise_SD^2;
+    currentNoise = ones(1, numStates) * (addedNoise_SD)^2;
 end
 
 % Default step size is: 1 /  (number of covariates) ^ (- 1/3)
@@ -155,7 +157,8 @@ elseif calculateTensor
     currentG = metricTensor(...
                              sampledParams,    sensitivities_1,... 
                              numSampledParams, observedStates,... 
-                             currentNoise,     priorSecondDerivative...                              
+                             currentNoise,     priorSecondDerivative,... 
+                             beta...
                            );
 
     identity           = eye(numSampledParams);    
@@ -171,6 +174,7 @@ elseif calculateTensor
        currentThirdTerm  =  zeros(1, numSampledParams);
 
     else   
+       % Fix these for tempering
        GDeriv   = ...
                   metricTensorDerivatives...
                  (... 
@@ -212,11 +216,11 @@ attempted = 0;
 paramHistory        = zeros(numPosteriorSamples, numSampledParams);
 LL_History          = zeros(numPosteriorSamples, numStates);
 metricTensorHistory = cell(1, numPosteriorSamples);
-trajectoryHistory        = zeros(numStates, numPosteriorSamples, timePoints);
-trajectoryHistory   = cell(1, numStates)
+trajectoryHistory   = zeros(numStates, numPosteriorSamples, numTimePoints);
+
 
 % Set monitor rate for adapting step sizes
-stepSizeMonitorRate = 10;
+stepSizeMonitorRate = Model.stepSizeMonitorRate;
 
 % Allocate vector to store acceptance ratios
 acceptanceRatios    = zeros(1, burnin +...
@@ -249,17 +253,17 @@ while continueIterations
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Update parameters       %
-    %%%%%%%%%%%%%%%%%%%%%%%%%%%          
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%      
     
     G     = currentG;
     invG  = currentInvG;    
     
-    mean  = currentSampledParams  + (stepSize^2 / 2) *  currentFirstTerm  ...
-                                  -  stepSize^2      *  currentSecondTerm ...
-                                  + (stepSize^2 / 2) *  currentThirdTerm;
+    mean  = currentSampledParams  + (stepSize / 2) *  currentFirstTerm  ...
+                                  -  stepSize      *  currentSecondTerm ...
+                                  + (stepSize / 2) *  currentThirdTerm;
     
     newSampledParams      = mean +  ...
-                            randn(1, numSampledParams) * chol(stepSize^2 * invG); 
+                            randn(1, numSampledParams) * chol(stepSize * invG); 
     
     newParams             = updateTotalParameters( totalParams,...
                                                    newSampledParams,...
@@ -300,8 +304,8 @@ while continueIterations
     
     % Calculate probability of proposed parameters given current parameters
     % The first term is the log of the normalization constant
-    probNewGivenOld   = - log(prod(diag(chol(invG * stepSize^2)))) - ...
-                          0.5*(mean - newSampledParams) * (G / stepSize^2) * (mean - newSampledParams)'... 
+    probNewGivenOld   = - log(prod(diag(chol(invG * stepSize)))) - ...
+                          0.5*(mean - newSampledParams) * (G / stepSize) * (mean - newSampledParams)'... 
                           -   (numSampledParams / 2)*log(2*pi);   
     try
         gradient_LL = LL_Gradient(...
@@ -313,7 +317,7 @@ while continueIterations
                                  );
     catch    
         iterationNum = iterationNum - 1;    
-        attempted    = attempted    - 1;  
+        attempted    = attempted    - 1; 
         % redo current iteration step        
         continue
     end % try                                                                                                     
@@ -328,7 +332,8 @@ while continueIterations
         G           = metricTensor(...
                                    newSampledParams,   sensitivities_1,... 
                                    numSampledParams,   observedStates,... 
-                                   currentNoise,       priorSecondDerivative...                              
+                                   currentNoise,       priorSecondDerivative,... 
+                                   beta...
                                   );
 
         identity    = eye(numSampledParams); 
@@ -362,9 +367,9 @@ while continueIterations
     
     end % if
         
-    mean  = newSampledParams     + (stepSize^2 / 2) * firstTerm  ...
-                                 -  stepSize^2      * secondTerm ...
-                                 + (stepSize^2 / 2) * thirdTerm;
+    mean  = newSampledParams     + (stepSize / 2) * firstTerm  ...
+                                 -  stepSize      * secondTerm ...
+                                 + (stepSize / 2) * thirdTerm;
                           
     totalMean             = updateTotalParameters( totalParams,...
                                                    mean,...
@@ -373,10 +378,11 @@ while continueIterations
     % Calculate probability of current parameters given proposed parameters   
     % The first term is the log of the normalization constant 
     % log(prod(diag(chol... is a fast calculation of log determinant                
-    probOldGivenNew  = - log(prod(diag(chol(invG * stepSize^2)))) - ...                         
-                         0.5*(mean - currentSampledParams) * (G / stepSize^2) * (mean - currentSampledParams)'... 
+    probOldGivenNew  = - log(prod(diag(chol(invG * stepSize)))) - ...                         
+                         0.5*(mean - currentSampledParams) * (G / stepSize) * (mean - currentSampledParams)'... 
                          -   (numSampledParams / 2)*log(2*pi); 
-                         
+      
+    % proposed_LL is in [-inf, 0]               
     proposed_LL      = calculate_LL( speciesEstimates, Y,... 
                                      currentNoise,     observedStates...
                                    );
@@ -396,14 +402,18 @@ while continueIterations
         currentLogPrior(p) = prior(sampledParam_idxs(p),...
                                    currentSampledParams(p));        
     end
-    currentLogPrior = sum(currentLogPrior);  
-        
+    currentLogPrior = sum(currentLogPrior);      
+    
    % Accept according to ratio of log probabilities
+   % Also, temper the distribution by beta. priors are not multiplied by
+   % beta
+   probOldGivenNew = beta*probOldGivenNew;
+   probNewGivenOld = beta*probNewGivenOld;
     ratio =... 
-                 proposed_LL  +  proposedLogPrior  +  probOldGivenNew -... 
-                 current_LL   -  currentLogPrior   -  probNewGivenOld;           
-      
-        
+             beta*proposed_LL  +  proposedLogPrior  +  probOldGivenNew -... 
+             beta*current_LL   -  currentLogPrior   -  probNewGivenOld;        
+    
+    
     if ratio > 0 || log(rand) < min(0, ratio)
         % Accept proposal
         % Update variables        
@@ -418,8 +428,41 @@ while continueIterations
         currentSecondTerm          = secondTerm;
         currentThirdTerm           = thirdTerm;  
         currentSpeciesEstimates    = speciesEstimates;
-                   
+        ratioLastAccepted          = ratio;       
+        if mod(iterationNum, stepSizeMonitorRate) == 0 
+            currentStepSize        = stepSize;
+            stepSize               = min(Model.stepMax, stepSize + ...
+                                        rand*(Model.stepMax));
+        end
+                                    
+            
+    elseif mod(iterationNum, stepSizeMonitorRate + 1) == 0 
+           % if iteration after stepSizeMonitorRate and proposal rejected
+           stepSize = currentStepSize;
+    else
+        % This assumes symmetry in stepping directions          
+        % Decrease stepSize by half for every order of magnitude decrease
+        % in acceptance probability
+        stepMax               = Model.stepMax;
+        stepMin               = Model.stepMin;
+        rla                   = ratioLastAccepted;
+        %ratioProbDiff        = exp(rla) - exp(ratio);
+        %ratioProbLogDiff     = log(abs(ratioProbDiff)) / log(10);
+        ratioDecadeRLA        = log(abs(rla)) / log(10);
+        ratioDecade           = log(abs(ratio)) / log(10);
+        changeInRatioScale    = ratioDecade - ratioDecadeRLA;
+        crs                   = changeInRatioScale;
+        stepSizeUpperBound    = min(stepMax, stepSize / 2^(crs));
+        stepSizeLowerBound    = max(stepMin, stepSizeUpperBound);
+        stepSize              = stepSizeLowerBound;
+        %if (randn > 0.5) stepSign = 1; else stepSign = -1; end
+        %stepSize = stepSign*stepSize;
     end
+    
+    
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % Display statistics and plots in Real time %
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
     
     % Keep track of acceptance ratios at each iteration number
     acceptanceRatio                = 100*accepted / attempted;
@@ -447,12 +490,16 @@ while continueIterations
                    figStart: figEnd...
                  );
     
-    paramTriples = {... 
-                     [cp(1) cp(2) cp(3)],...                      
-                   }; 
+    num3DPlots = length(Model.paramTriple_idxs);
+    paramTriples = cell(1, num3DPlots);
+    
+    for i = 1:num3DPlots
+        paramTriples{i} =   cp(Model.paramTriple_idxs{i});
+    end 
+    
                      
     figStart = figEnd + 1;
-    figEnd   = figStart + length(paramTriples);
+    figEnd   = figStart + num3DPlots;
     plot_3D_Slice( paramTriples, ...
                    figStart: figEnd...
                  );   
@@ -469,8 +516,8 @@ while continueIterations
         LL_History(posteriorSampleNum, :)          = current_LL;        
         metricTensorHistory{posteriorSampleNum}    = currentG;
         
-        for p = 1: numStates        
-            trajectoryHistory(p, posteriorSampleNum, :) = currentSpeciesEstimates(numStates, :);             
+        for state = 1: numStates        
+            trajectoryHistory(state, posteriorSampleNum, :) = currentSpeciesEstimates(state, :);             
         end
         
         if iterationNum == burnin + numPosteriorSamples
@@ -505,10 +552,8 @@ while continueIterations
                     stepSize = 1;
                 end
              else                
-                if stepSize < .6 
-                   stepSize = .6;
-                elseif stepSize > 1.5
-                    stepSize = 1.5;
+                if stepSize < Model.stepMin 
+                   stepSize = Model.stepMin;                
                 end
              end % if
             

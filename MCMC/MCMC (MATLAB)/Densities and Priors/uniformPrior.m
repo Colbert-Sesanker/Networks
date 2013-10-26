@@ -1,14 +1,17 @@
-function priorProb = uniformPrior(paramNum, param)
+function priorProb = uniformPrior(paramNum,              param,...
+                                  paramIdxsForThisPrior, interval)
+                              
+% The indexes here are the absolute indexes for the parameter
 
 %%%%%%%%%%%%%%%
 % log Uniform %
 %%%%%%%%%%%%%%%
 
-a = 3;
-b = 9;
+a = interval(1);
+b = interval(2);
 
 % Calculate probability of value from the prior
-if paramNum == 9             
+if any(paramNum == paramIdxsForThisPrior)              
    priorProb = log(unifpdf(param, a, b));
 else    
    priorProb = 0;
