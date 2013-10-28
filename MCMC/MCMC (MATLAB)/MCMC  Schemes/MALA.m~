@@ -157,8 +157,7 @@ elseif calculateTensor
     currentG = metricTensor(...
                              sampledParams,    sensitivities_1,... 
                              numSampledParams, observedStates,... 
-                             currentNoise,     priorSecondDerivative,... 
-                             beta...
+                             currentNoise,     priorSecondDerivative...                              
                            );
 
     identity           = eye(numSampledParams);    
@@ -332,8 +331,7 @@ while continueIterations
         G           = metricTensor(...
                                    newSampledParams,   sensitivities_1,... 
                                    numSampledParams,   observedStates,... 
-                                   currentNoise,       priorSecondDerivative,... 
-                                   beta...
+                                   currentNoise,       priorSecondDerivative...                                    
                                   );
 
         identity    = eye(numSampledParams); 
@@ -413,6 +411,7 @@ while continueIterations
              beta*proposed_LL  +  proposedLogPrior  +  probOldGivenNew -... 
              beta*current_LL   -  currentLogPrior   -  probNewGivenOld;        
     
+    if isnan(ratio) ratio = -inf; end; 
     
     if ratio > 0 || log(rand) < min(0, ratio)
         % Accept proposal
@@ -428,15 +427,15 @@ while continueIterations
         currentSecondTerm          = secondTerm;
         currentThirdTerm           = thirdTerm;  
         currentSpeciesEstimates    = speciesEstimates;
-        ratioLastAccepted          = ratio;       
-        if mod(iterationNum, stepSizeMonitorRate) == 0 
-            currentStepSize        = stepSize;
+        ratioLastAccepted          = ratio;     
+        currentStepSize            = stepSize;
+        if mod(iterationNum, stepSizeMonitorRate) == 0             
             stepSize               = min(Model.stepMax, stepSize + ...
-                                        rand*(Model.stepMax));
+                                         rand*(Model.stepMax));
         end
                                     
             
-    elseif mod(iterationNum, stepSizeMonitorRate + 1) == 0 
+    elseif mod(iterationNum, stepSizeMonitorRate + 1) == 0         
            % if iteration after stepSizeMonitorRate and proposal rejected
            stepSize = currentStepSize;
     else
@@ -490,16 +489,16 @@ while continueIterations
                    figStart: figEnd...
                  );
     
-    num3DPlots = length(Model.paramTriple_idxs);
-    paramTriples = cell(1, num3DPlots);
+    num3dPlots = length(Model.paramTriple_idxs);
+    paramTriples = cell(1, num3dPlots);
     
-    for i = 1:num3DPlots
+    for i = 1:num3dPlots
         paramTriples{i} =   cp(Model.paramTriple_idxs{i});
     end 
     
                      
     figStart = figEnd + 1;
-    figEnd   = figStart + num3DPlots;
+    figEnd   = figStart + num3dPlots;
     plot_3D_Slice( paramTriples, ...
                    figStart: figEnd...
                  );   

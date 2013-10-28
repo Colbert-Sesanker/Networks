@@ -43,7 +43,7 @@ plotProposedTrajectories           = Model.plotProposedTrajectories;
 
 sampledParam_idxs                  = Model.sampledParam_idxs;
 sampledParams                      = totalParams(sampledParam_idxs);                                          
-
+beta                               = Model.beta;
 
 
 
@@ -171,6 +171,12 @@ trajectoryHistory   = zeros(numStates, numPosteriorSamples, numTimePoints);
 % Set monitor rate for adapting step sizes
 stepSizeMonitorRate = Model.stepSizeMonitorRate;
 
+% Initialize ratioLastAccepted to 1 in case there is no previous accepted
+% step
+ratioLastAccepted     = 1;
+% initialize current stepSize
+currentStepSize            = stepSize;
+
 % Allocate vector to store acceptance ratios
 acceptanceRatios    = zeros(1, burnin +...
                             numPosteriorSamples);
@@ -204,7 +210,7 @@ while continueIterations
     
     newSampledParams  = currentSampledParams + ...
                                                ...
-                        stepSize * randn(1, numSampledParams) * chol(M); 
+                        randn(1, numSampledParams) * chol(stepSize*M); 
     
     newParams         = updateTotalParameters( totalParams,...
                                                newSampledParams,...
@@ -214,7 +220,9 @@ while continueIterations
     % Integrate Equations     %
     %%%%%%%%%%%%%%%%%%%%%%%%%%%    
     
-    if calculateTensor          
+    if calculateTensor
+        
+        try
         
         [trajectories,      ...
          sensitivities_1,   ...
@@ -240,6 +248,16 @@ while continueIterations
                                     numSampledParams,   observedStates,... 
                                     currentNoise,       priorSecondDerivative...                              
                                   );
+        catch
+            iterationNum = iterationNum - 1;  
+            attempted    = attempted    - 1;
+            % redo current iteration step 
+            if (randn > 0.5) stepSign = 1; else stepSign = -1; end
+            stepSize = min(Model.MaxStepSize, stepSize + stepSign*rand*Model.maxStepSize;
+            if (randn > 0.5) stepSign = 1; else stepSign = -1; end
+               stepSize = stepSign*stepSize;
+            continue
+        end % try         
 
         identity    = eye(numSampledParams); 
         % In addition to bounding singular values
@@ -256,24 +274,26 @@ while continueIterations
         M             =  M_proposed;
         
         
-        currentSampledParams  = newSampledParams;
+%         currentSampledParams  = newSampledParams;
         
-        newSampledParams      = currentSampledParams + ...
-                                                       ...
-                                stepSize * randn(1, numSampledParams) * chol(M); 
+%         newSampledParams      = currentSampledParams + ...
+%                                                        ...
+%                                 randn(1, numSampledParams) * chol(stepSize*M); 
     
-        newParams             = updateTotalParameters( totalParams,...
-                                                       newSampledParams,...
-                                                       sampledParam_idxs);  
-                                                       
+%         newParams             = updateTotalParameters( totalParams,...
+%                                                        newSampledParams,...
+%                                                        sampledParam_idxs);  
+%                                                        
         paramDiff             = (newSampledParams - currentSampledParams);
         
-        probNewGivenOld       =  log(prod(diag(chol(M_current * stepSize^2)))) - ...                         
-                                 0.5* paramDiff * (M_invCurrent / stepSize^2) * paramDiff'... 
+        probNewGivenOld       =  log(prod(diag(chol(M_current * stepSize)))) - ...                         
+                                 0.5* paramDiff * (M_invCurrent / stepSize) * paramDiff'... 
                                  -   (numSampledParams / 2)*log(2*pi); 
-        
-        probOldGivenNew       =  log(prod(diag(chol(M_proposed * stepSize^2)))) - ...                         
-                                 0.5* paramDiff * (M_invProposed / stepSize^2) * paramDiff'... 
+                             
+        % The stepSize here should be what it changes to if
+        % newSampledParams is accepted
+        probOldGivenNew       =  log(prod(diag(chol(M_proposed * stepSize)))) - ...                         
+                                 0.5* paramDiff * (M_invProposed / stepSize) * paramDiff'... 
                                  -   (numSampledParams / 2)*log(2*pi);
                                                        
         
@@ -339,9 +359,11 @@ while continueIterations
         
    % Accept according to ratio of log probabilities
     ratio =... 
-           proposed_LL  +  proposedLogPrior +  probOldGivenNew ...
-         - current_LL   -  currentLogPrior  -  probNewGivenOld;              
+           beta*proposed_LL  +  proposedLogPrior +  beta*probOldGivenNew ...
+         - beta*current_LL   -  currentLogPrior  -  beta*probNewGivenOld;              
         
+    if isnan(ratio) ratio = -inf; end; 
+    
     if ratio > 0 || log(rand) < min(0, ratio)
         % Accept proposal
         % Update variables        
@@ -351,6 +373,33 @@ while continueIterations
         currentSampledParams       = newSampledParams;
         current_LL                 = proposed_LL;      
         currentSpeciesEstimates    = speciesEstimates;                   
+        ratioLastAccepted          = ratio;     
+        currentStepSize            = stepSize;
+        if mod(iterationNum, stepSizeMonitorRate) == 0             
+            stepSize               = min(Model.stepMax, stepSize + ...
+                                         rand*(Model.stepMax));
+        end
+                                    
+            
+    elseif mod(iterationNum, stepSizeMonitorRate + 1) == 0         
+           % if iteration after stepSizeMonitorRate and proposal rejected
+           stepSize = currentStepSize;
+    else
+        % This assumes symmetry in stepping directions          
+        % Decrease stepSize by half for every order of magnitude decrease
+        % in acceptance probability
+        stepMax               = Model.stepMax;
+        stepMin               = Model.stepMin;
+        rla                   = ratioLastAccepted;       
+        ratioDecadeRLA        = log(abs(rla)) / log(10);
+        ratioDecade           = log(abs(ratio)) / log(10);
+        changeInRatioScale    = ratioDecade - ratioDecadeRLA;
+        crs                   = changeInRatioScale;
+        stepSizeUpperBound    = min(stepMax, stepSize / 2^(crs));
+        stepSizeLowerBound    = max(stepMin, stepSizeUpperBound);
+        stepSize              = stepSizeLowerBound;
+        %if (randn > 0.5) stepSign = 1; else stepSign = -1; end
+        %stepSize = stepSign*stepSize;
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -383,12 +432,16 @@ while continueIterations
                    figStart: figEnd...
                  );
     
-    paramTriples = {... 
-                     [cp(1) cp(2) cp(3)],...                      
-                   }; 
+    num3dPlots = length(Model.paramTriple_idxs);
+    paramTriples = cell(1, num3dPlots);
+    
+    for i = 1:num3dPlots
+        paramTriples{i} =   cp(Model.paramTriple_idxs{i});
+    end 
+    
                      
     figStart = figEnd + 1;
-    figEnd   = figStart + length(paramTriples);
+    figEnd   = figStart + num3dPlots;
     plot_3D_Slice( paramTriples, ...
                    figStart: figEnd...
                  );   
@@ -411,8 +464,11 @@ while continueIterations
         if iterationNum == burnin + numPosteriorSamples
             % N Posterior samples have been collected so stop
             continueIterations = false;
-        end     
+        end
         
+        disp('%%%%');
+        disp(['step size: ' num2str(stepSize) ]);
+        disp('%%%%');
 
     else        
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -420,29 +476,29 @@ while continueIterations
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%        
         
        if mod(iterationNum, stepSizeMonitorRate) == 0            
-            minAccept = stepSizeRange(1); 
-            maxAccept = stepSizeRange(2);
-            % amount to increase/decrease step size 
-            % to alter acceptance ratio 
-            dec       = 0.001; % Note: this should be based on acceptanceRatio - minAccept
-            assert(stepSize > 0);            
-            
-            if     acceptanceRatio < minAccept
-                       stepSize = stepSize  - dec;
-            elseif acceptanceRatio > maxAccept  
-                % Steps are too small, so increase them a bit
-                       stepSize = stepSize  + dec;                         
-            end % if              
-             
-            if stepSize < .001 
-               stepSize = .001;
-            elseif stepSize > 1
-               stepSize = 1;
-            end             
-           
-            disp('%%%%');
-            disp(['step size: ' num2str(stepSize) ]);
-            disp('%%%%');
+%             minAccept = stepSizeRange(1); 
+%             maxAccept = stepSizeRange(2);
+%             % amount to increase/decrease step size 
+%             % to alter acceptance ratio 
+%             dec       = 0.001; % Note: this should be based on acceptanceRatio - minAccept
+%             assert(stepSize > 0);            
+%             
+%             if     acceptanceRatio < minAccept
+%                        stepSize = stepSize  - dec;
+%             elseif acceptanceRatio > maxAccept  
+%                 % Steps are too small, so increase them a bit
+%                        stepSize = stepSize  + dec;                         
+%             end % if              
+%              
+%             if stepSize < .001 
+%                stepSize = .001;
+%             elseif stepSize > 1
+%                stepSize = 1;
+%             end             
+%            
+             disp('%%%%');
+             disp(['step size: ' num2str(stepSize) ]);
+             disp('%%%%');
                                  
         end % if            
         

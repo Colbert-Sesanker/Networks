@@ -1,17 +1,18 @@
-% Run Repressilator with positive Feedback
+% Run network 5.2
 
 % Add all dierectories in MCMC methods to path
 addpath(genpath('./'))
 % Close all Figures
 close all;
 
-Model.burnin                = 500;
-Model.numPosteriorSamples   = 2000;
+Model.burnin                = 1;
+Model.numPosteriorSamples   = 2500;
 
 
 % name for saving results
 Model.equationName                   = 'network_fiveDotTwo'; 
 % function handle of model for automatic differentiation
+Model.equations                      = @network_fiveDotTwo;
 Model.equations_AD                   = @network_fiveDotTwo_AD;
 % indexes of observed species in state vector
 Model.observedStates                 = [1 2 3 4 5];
@@ -25,18 +26,19 @@ Model.numSampledParams               = length(sampledParam_idxs);
 Model.sampledParam_idxs              = sampledParam_idxs;
 % Noise
 Model.addedNoise_SD                  = .5;
+% Scale factor used in tempering
+Model.beta                           = 1e-7;
 % The initial step size for parameter updates
-
-Model.initialStepSize                = 40;
-Model.stepMax                        = 50;
+Model.initialStepSize                = 1e-3 / Model.beta;
+Model.stepMax                        = 1 / Model.beta;
 Model.stepMin                        = .1;
 % Step Size for standard Metropolis Hastings
-Model.mhStepSize                     = 0.7;
+Model.mhStepSize                     = 1e-3 / Model.beta;
 % The step size is adjusted online until acceptance ratio
 % is in the range given by 'stepSizeRange'
 Model.stepSizeRange                  = [70 80];
 % Adjust Step-Size after stepSizeMonitorRate iterations
-Model.stepSizeMonitorRate            = 5;
+Model.stepSizeMonitorRate            = 3;
 % epsilon is for finite differences
 Model.epsilon                        = 5e-1; 
 Model.zeroMetricTensorDerivatives    = true;
@@ -51,8 +53,8 @@ Model.preConditionMatrix             = eye(Model.numSampledParams);
 %                                        inv(1e4*[4.0493   -5.3057   -0.8575
 %                                        -5.3057    8.3806    1.5185
 %                                        -0.8575    1.5185    0.2977]);
-%
-Model.beta                           = 1e-7;
+
+
 % For RMHMC
 Model.numLeapFrogSteps               = 3;
 Model.stepSize_RMHMC                 = 2 / Model.numLeapFrogSteps;
@@ -147,7 +149,7 @@ Model.stateMap           = stateMap;
 Model.initialValues      = initialValues;
 
 % Integrate model equations
-[timeData, speciesEstimates] = ode45( @network_fiveDotTwo,...
+[timeData, speciesEstimates] = ode45( Model.equations  ,...
                                       timePoints,...
                                       initialValues,...      
                                       odeset('RelTol', 1e-6),...
@@ -169,9 +171,9 @@ Model.noisyData  = speciesEstimates + ...
 %%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-% MH(Model);
+ MH(Model);
 % MH_oneParamAt_a_Time(Model);
-  MALA(Model);
+% MALA(Model);
 % RMHMC(Model);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%        

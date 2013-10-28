@@ -50,7 +50,7 @@ if nargin > 4
      trajectories, sensitivityMatrix] = CVode(timePoints(2:end), 'Normal');
     
     if errorStatus == -1
-        error(errorStatus);
+        error(errorStatus, 'intergration error');            
     end   
    
     % the sensitivities and trajectories are concantenated for the first

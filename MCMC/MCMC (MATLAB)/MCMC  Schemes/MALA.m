@@ -157,9 +157,8 @@ elseif calculateTensor
     currentG = metricTensor(...
                              sampledParams,    sensitivities_1,... 
                              numSampledParams, observedStates,... 
-                             currentNoise,     priorSecondDerivative,... 
-                             beta...
-                           );
+                             currentNoise,     priorSecondDerivative...                              
+                           )
 
     identity           = eye(numSampledParams);    
     % In addition to bounding singular values
@@ -221,6 +220,12 @@ trajectoryHistory   = zeros(numStates, numPosteriorSamples, numTimePoints);
 
 % Set monitor rate for adapting step sizes
 stepSizeMonitorRate = Model.stepSizeMonitorRate;
+
+% Initialize ratioLastAccepted to 1 in case there is no previous accepted
+% step
+ratioLastAccepted     = 1;
+% initialize current stepSize
+currentStepSize            = stepSize;
 
 % Allocate vector to store acceptance ratios
 acceptanceRatios    = zeros(1, burnin +...
@@ -332,9 +337,8 @@ while continueIterations
         G           = metricTensor(...
                                    newSampledParams,   sensitivities_1,... 
                                    numSampledParams,   observedStates,... 
-                                   currentNoise,       priorSecondDerivative,... 
-                                   beta...
-                                  );
+                                   currentNoise,       priorSecondDerivative...                                    
+                                  )
 
         identity    = eye(numSampledParams); 
         % In addition to bounding singular values
@@ -413,6 +417,7 @@ while continueIterations
              beta*proposed_LL  +  proposedLogPrior  +  probOldGivenNew -... 
              beta*current_LL   -  currentLogPrior   -  probNewGivenOld;        
     
+    if isnan(ratio) ratio = -inf; end; 
     
     if ratio > 0 || log(rand) < min(0, ratio)
         % Accept proposal
@@ -428,15 +433,15 @@ while continueIterations
         currentSecondTerm          = secondTerm;
         currentThirdTerm           = thirdTerm;  
         currentSpeciesEstimates    = speciesEstimates;
-        ratioLastAccepted          = ratio;       
-        if mod(iterationNum, stepSizeMonitorRate) == 0 
-            currentStepSize        = stepSize;
+        ratioLastAccepted          = ratio;     
+        currentStepSize            = stepSize;
+        if mod(iterationNum, stepSizeMonitorRate) == 0             
             stepSize               = min(Model.stepMax, stepSize + ...
                                          rand*(Model.stepMax));
         end
                                     
             
-    elseif mod(iterationNum, stepSizeMonitorRate + 1) == 0 
+    elseif mod(iterationNum, stepSizeMonitorRate + 1) == 0         
            % if iteration after stepSizeMonitorRate and proposal rejected
            stepSize = currentStepSize;
     else
@@ -524,6 +529,10 @@ while continueIterations
             % N Posterior samples have been collected so stop
             continueIterations = false;
         end
+        
+        disp('%%%%');
+        disp(['step size: ' num2str(stepSize) ]);
+        disp('%%%%');
 
     else        
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
