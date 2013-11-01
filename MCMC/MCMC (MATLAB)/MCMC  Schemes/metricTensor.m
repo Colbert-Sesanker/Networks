@@ -28,13 +28,13 @@ G = zeros(numSampledParams,...
     % Follows from (log(posterior))_{theta,theta}, second derivative of 
     % log(posterior). Note: this is a prior on a matrix of all sampled parameters        
     G    = G  -  priorSecondDerivative(numSampledParams,...
-                                      sampledParameters);
+                                       sampledParameters);
     % bound singular values near zero
     % cutOff is the maximum condition number allowed
     % 'singVal_cutOff' is a lower bound on the singular values that
     % enforces an upper bound of 'cutOff' on the condition number    
     identity               = eye(numSampledParams);      
-    cutOff                 = 1e8; 
+    cutOff                 = 1e10; 
     [U, singularValues, V] = svd(G);
     spectralRadius         = max(diag(singularValues));
     singVal_cutOff         = spectralRadius / cutOff;
@@ -42,6 +42,15 @@ G = zeros(numSampledParams,...
                                  identity  * singVal_cutOff);
     
     G           = U * bounded_singularValues * V'; 
+    % Add diagonal dust to improve conditioning
+    %G           = G + identity*1e-6;
+    
+    % check if this matrix is dangerous and should raise an error
+    % rcond is the reciprocal condition number
+    if  hasNaN(G) % ||  rcond(G) < 1e-12 )
+        error('has NaN values')
+    end    
+
     
 %     % multiply G by beta in [0,1] for tempering
 %     beta = 1;   % setting beta == 1 makes G no longer the mertic tensor

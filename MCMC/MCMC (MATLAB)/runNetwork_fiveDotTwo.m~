@@ -6,7 +6,7 @@ addpath(genpath('./'))
 close all;
 
 Model.burnin                = 1;
-Model.numPosteriorSamples   = 2500;
+Model.numPosteriorSamples   = 200;
 
 
 % name for saving results
@@ -27,13 +27,13 @@ Model.sampledParam_idxs              = sampledParam_idxs;
 % Noise
 Model.addedNoise_SD                  = .5;
 % Scale factor used in tempering
-Model.beta                           = 1e-7;
+Model.beta                           = 1e-6;
 % The initial step size for parameter updates
-Model.initialStepSize                = 1e-3 / Model.beta;
-Model.stepMax                        = 1e- / Model.beta;
+Model.initialStepSize                = 70;
+Model.stepMax                        = Model.initialStepSize;
 Model.stepMin                        = .1;
 % Step Size for standard Metropolis Hastings
-Model.mhStepSize                     = 50;
+Model.mhStepSize                     = 1e-3 / Model.beta;
 % The step size is adjusted online until acceptance ratio
 % is in the range given by 'stepSizeRange'
 Model.stepSizeRange                  = [70 80];
@@ -171,9 +171,9 @@ Model.noisyData  = speciesEstimates + ...
 %%%%%%%%%%%%%%%%%%%%%%%%%
 
 
- MH(Model);
+% MH(Model);
 % MH_oneParamAt_a_Time(Model);
-% MALA(Model);
+  MALA(Model);
 % RMHMC(Model);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%        

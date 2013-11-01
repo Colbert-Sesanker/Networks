@@ -4,8 +4,7 @@
 function G  = metricTensor(...
                              sampledParameters,  sensitivities_1,... 
                              numSampledParams,   speciesObserved,... 
-                             currentNoise,       priorSecondDerivative,...  
-                             beta...
+                             currentNoise,       priorSecondDerivative...                            
                           )
 G = zeros(numSampledParams,...
           numSampledParams);    
@@ -35,7 +34,7 @@ G = zeros(numSampledParams,...
     % 'singVal_cutOff' is a lower bound on the singular values that
     % enforces an upper bound of 'cutOff' on the condition number    
     identity               = eye(numSampledParams);      
-    cutOff                 = 1e8; 
+    cutOff                 = 1e10; 
     [U, singularValues, V] = svd(G);
     spectralRadius         = max(diag(singularValues));
     singVal_cutOff         = spectralRadius / cutOff;
@@ -44,8 +43,16 @@ G = zeros(numSampledParams,...
     
     G           = U * bounded_singularValues * V'; 
     
-    % multiply G by beta in [0,1] for tempering
-    G = G;
+    % check if this matrix is dangerous and should raise an error
+    if( rcond(G) < 1e-12 )
+        error('nearly singular matrix')
+    end
+    
+end
+    
+%     % multiply G by beta in [0,1] for tempering
+%     beta = 1;   % setting beta == 1 makes G no longer the mertic tensor
+%     G = beta*G;
     
     % In addition to bounding singular values
     % add diagonal dust to improve rank     
